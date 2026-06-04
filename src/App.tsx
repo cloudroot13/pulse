@@ -24,7 +24,6 @@ import {
   Mail,
   Minus,
   Menu,
-  MessageCircle,
   Plus,
   Search,
   ShieldCheck,
@@ -54,6 +53,14 @@ type Product = {
 
 type CartItem = Product & {
   quantity: number
+}
+
+function WhatsAppIcon({ className = 'size-6' }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 32 32" fill="currentColor" aria-hidden="true">
+      <path d="M16.04 3C8.92 3 3.14 8.74 3.14 15.8c0 2.26.6 4.46 1.74 6.4L3 29l6.98-1.82a13.03 13.03 0 0 0 6.06 1.52c7.12 0 12.9-5.74 12.9-12.8S23.16 3 16.04 3Zm0 23.54c-1.9 0-3.75-.5-5.38-1.46l-.39-.23-4.14 1.08 1.1-4.01-.26-.42a10.55 10.55 0 0 1-1.63-5.7c0-5.87 4.8-10.64 10.7-10.64 5.9 0 10.7 4.77 10.7 10.64 0 5.87-4.8 10.74-10.7 10.74Zm5.86-7.96c-.32-.16-1.9-.93-2.2-1.04-.3-.1-.52-.16-.74.16-.22.32-.85 1.04-1.04 1.25-.19.22-.38.24-.7.08-.32-.16-1.36-.5-2.6-1.6-.96-.85-1.6-1.9-1.8-2.22-.18-.32-.02-.5.14-.66.14-.14.32-.38.48-.56.16-.18.22-.32.32-.54.1-.22.05-.4-.03-.56-.08-.16-.74-1.78-1.02-2.44-.27-.64-.55-.55-.74-.56h-.63c-.22 0-.56.08-.86.4-.3.32-1.13 1.1-1.13 2.7s1.16 3.13 1.32 3.35c.16.22 2.28 3.46 5.54 4.86.77.33 1.38.53 1.85.68.78.25 1.48.21 2.04.13.62-.09 1.9-.77 2.17-1.52.27-.75.27-1.4.19-1.52-.08-.13-.3-.21-.62-.37Z" />
+    </svg>
+  )
 }
 
 const productCatalog: Product[] = [
@@ -1015,7 +1022,7 @@ function App() {
                 contato@pulsepro.com
               </a>
               <a className="flex items-center gap-3 hover:text-cyan-300" href="https://wa.me/5561998386625">
-                <MessageCircle className="size-5" aria-hidden="true" />
+                <WhatsAppIcon className="size-5" />
                 +55 (61) 99838-6625
               </a>
             </div>
@@ -1050,7 +1057,7 @@ function App() {
       </footer>
 
       <a className="animate-whatsapp fixed bottom-5 right-5 z-50 grid size-14 place-items-center rounded-full bg-green-500 text-white shadow-2xl shadow-green-900/25 transition hover:-translate-y-1 hover:bg-green-600 focus:outline-none focus:ring-4 focus:ring-green-200" href="https://wa.me/5561998386625" aria-label="Chamar no WhatsApp">
-        <MessageCircle className="size-7" aria-hidden="true" />
+        <WhatsAppIcon className="size-8" />
       </a>
 
       {selectedProduct && (
