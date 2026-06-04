@@ -1,0 +1,1251 @@
+import { useEffect, useState } from 'react'
+import logoPulsepro from './assets/Logo-PulsePro.webp'
+import bannerWellness from './assets/banners/Captura de Tela 2026-05-30 às 14.25.08.png'
+import bannerPerformance from './assets/banners/Captura de Tela 2026-05-30 às 14.25.22.png'
+import cabeloPeleUnhaImg from './assets/produtos/beleza/Cabelo-Pele-e-Unha.webp'
+import cabeloPeleUnhaKit2Img from './assets/produtos/beleza/Cabelo-Pele-e-Unha-2.webp'
+import cabeloPeleUnhaKit3Img from './assets/produtos/beleza/Cabelo-Pele-e-Unha-3.webp'
+import belezaCategoriaImg from './assets/produtos/beleza/Pulsepro_Prancheta-2.webp'
+import brainFuelKitImg from './assets/produtos/performance_energia/brain-fuel/Brain-Fuel-2.webp'
+import creatinaGummyImg from './assets/produtos/performance_energia/creatina-gummy/Creatina-Gummy.webp'
+import creatinaGummyKitImg from './assets/produtos/performance_energia/creatina-gummy/Creatina-Gummy-3.webp'
+import creatinaPuraImg from './assets/produtos/performance_energia/creatina-pure/Creatina.webp'
+import pulsePowerImg from './assets/produtos/performance_energia/pulse-power/Pulse-Power.webp'
+import melatoninaImg from './assets/produtos/rotina_bem-estar/melatonina/Melatonina.webp'
+import pulseFlexImg from './assets/produtos/rotina_bem-estar/pulse-flex/Pulse-Flex.webp'
+import pulseFlexKitImg from './assets/produtos/rotina_bem-estar/pulse-flex/Pulse-Flex-2.webp'
+import {
+  BadgeCheck,
+  ChevronRight,
+  CreditCard,
+  Lock,
+  Leaf,
+  LockKeyhole,
+  Mail,
+  Minus,
+  Menu,
+  MessageCircle,
+  Plus,
+  Search,
+  ShieldCheck,
+  ShoppingCart,
+  Sparkles,
+  Star,
+  UserRound,
+  X,
+} from 'lucide-react'
+
+type Product = {
+  id: string
+  name: string
+  price: string
+  tag?: string
+  category?: string
+  description?: string
+  benefits?: string[]
+  oldPrice?: string
+  subtitle?: string
+  details?: string
+  ingredients?: string[]
+  usage?: string
+  gallery?: string[]
+  image: string
+}
+
+type CartItem = Product & {
+  quantity: number
+}
+
+const productCatalog: Product[] = [
+  {
+    id: 'creatina-gummy',
+    category: 'Sabor uva verde',
+    name: 'Creatina Gummy',
+    price: 'R$149,90',
+    tag: 'Performance',
+    subtitle: 'Creatina em gomas mastigaveis para uma rotina mais pratica.',
+    description: 'Mais praticidade para completar seus treinos com energia.',
+    details: 'Ideal para quem busca praticidade no consumo diario de creatina, com formato facil de carregar e encaixar na rotina.',
+    benefits: ['Mais força e desempenho físico', 'Prático e saboroso para rotina', 'Mais energia para a última série'],
+    ingredients: ['Creatina monohidratada', 'Sabor uva verde', 'Gomas mastigaveis'],
+    usage: 'Consuma conforme orientacao do rotulo ou indicacao profissional.',
+    image: creatinaGummyImg,
+  },
+  {
+    id: 'pulse-flex',
+    category: 'Dores articulares',
+    name: 'Pulse Flex',
+    price: 'R$89,90',
+    tag: 'Bem-estar',
+    subtitle: 'Suporte para mobilidade e conforto no dia a dia.',
+    description: 'Suporte diário para mobilidade, conforto e bem-estar.',
+    details: 'Pensado para pessoas que querem cuidar das articulacoes e manter uma rotina mais leve para se movimentar.',
+    benefits: ['Mais mobilidade no dia a dia', 'Ajuda no cuidado das articulações', 'Rotina mais leve para se movimentar'],
+    ingredients: ['Colageno tipo 2', 'Curcuma', 'Capsulas praticas'],
+    usage: 'Use diariamente conforme recomendacao do fabricante.',
+    image: pulseFlexImg,
+  },
+  {
+    id: 'pulse-power',
+    category: 'Pré-treino',
+    name: 'Pulse Power',
+    price: 'R$119,90',
+    tag: 'Performance',
+    subtitle: 'Pre-treino para foco, disposicao e intensidade.',
+    description: 'Foco e intensidade para treinos mais produtivos.',
+    details: 'Formula criada para quem precisa de mais energia e foco antes dos treinos, com comunicacao clara para venda online.',
+    benefits: ['Auxilia na performance física', 'Suporte para treinos intensos', 'Sabor marcante e refrescante'],
+    ingredients: ['Beta-alanina', 'Taurina', 'Creatina'],
+    usage: 'Consumir antes do treino conforme orientacao do rotulo.',
+    image: pulsePowerImg,
+  },
+  {
+    id: 'cabelo-pele-unha',
+    name: 'Cabelo, Pele e Unha',
+    price: 'R$89,90',
+    tag: 'Beleza',
+    category: 'Beleza',
+    subtitle: 'Cuidado diario para beleza de dentro para fora.',
+    description: 'Formula para fortalecer a rotina de cuidado com cabelo, pele e unhas.',
+    details: 'Produto indicado para destacar a linha de beleza da marca com foco em autocuidado e consistencia no uso.',
+    benefits: ['Ajuda na rotina de beleza', 'Suporte para cabelo, pele e unhas', 'Capsulas faceis de consumir'],
+    ingredients: ['Biotina', 'Selenio', 'Vitaminas selecionadas'],
+    usage: 'Consumir conforme recomendacao do rotulo.',
+    image: cabeloPeleUnhaImg,
+  },
+  {
+    id: 'cabelo-pele-unha-kit-2',
+    name: 'Cabelo, Pele e Unha (Kit com 2)',
+    price: 'R$149,90',
+    oldPrice: 'R$179,80',
+    tag: 'Beleza',
+    category: 'Beleza',
+    subtitle: 'Kit com 2 unidades para manter o autocuidado em dia.',
+    description: 'Combo de beleza com melhor custo-beneficio.',
+    details: 'Ideal para quem quer manter uma rotina constante de cuidados com cabelo, pele e unhas.',
+    benefits: ['Economia no kit', 'Rotina de beleza prolongada', 'Boa opcao para recompra'],
+    ingredients: ['Biotina', 'Selenio', 'Vitaminas selecionadas'],
+    usage: 'Consumir conforme recomendacao do rotulo.',
+    image: cabeloPeleUnhaKit2Img,
+  },
+  {
+    id: 'cabelo-pele-unha-kit-3',
+    name: 'Cabelo, Pele e Unha (Kit com 3)',
+    price: 'R$199,90',
+    oldPrice: 'R$269,70',
+    tag: 'Beleza',
+    category: 'Beleza',
+    subtitle: 'Kit com 3 unidades para uma rotina completa.',
+    description: 'Combo especial de beleza com mais economia.',
+    details: 'Pensado para aumentar o ticket medio e destacar a economia da compra em kit.',
+    benefits: ['Maior economia', 'Mais unidades para uso continuo', 'Cuidado de dentro para fora'],
+    ingredients: ['Biotina', 'Selenio', 'Vitaminas selecionadas'],
+    usage: 'Consumir conforme recomendacao do rotulo.',
+    image: cabeloPeleUnhaKit3Img,
+  },
+  {
+    id: 'melatonina',
+    name: 'Melatonina Mastigável',
+    price: 'R$59,90',
+    tag: 'Sono',
+    category: 'Rotina e bem-estar',
+    subtitle: 'Apoio para noites mais tranquilas.',
+    description: 'Melatonina mastigavel para apoiar a rotina de descanso.',
+    details: 'Uma tela pensada para vender bem-estar, com foco em rotina noturna, praticidade e informacoes simples.',
+    benefits: ['Auxilia a rotina do sono', 'Formato mastigavel', 'Pratico para usar antes de dormir'],
+    ingredients: ['Melatonina', 'Sabor maracuja', 'Comprimidos mastigaveis'],
+    usage: 'Consumir antes de dormir conforme orientacao do rotulo.',
+    image: melatoninaImg,
+  },
+  {
+    id: 'creatina-pura',
+    name: 'Creatina Pura',
+    price: 'R$99,90',
+    tag: 'Performance',
+    category: 'Performance e energia',
+    subtitle: 'Creatina monohidratada em po para performance diaria.',
+    description: 'Creatina pura para auxiliar forca, energia e desempenho fisico.',
+    details: 'Produto essencial para a linha performance, ideal para quem prefere creatina em po e busca um consumo simples no dia a dia.',
+    benefits: ['100% creatina monohidratada', 'Auxilia no desempenho fisico', 'Boa opcao para rotina de treino'],
+    ingredients: ['Creatina monohidratada', 'Formato em po', 'Uso diario'],
+    usage: 'Misture em agua ou bebida de preferencia conforme recomendacao do rotulo.',
+    image: creatinaPuraImg,
+  },
+  {
+    id: 'brain-fuel',
+    name: 'Brain Fuel - Foco e Concentração (Kit com 2)',
+    price: 'R$149,90',
+    oldPrice: 'R$179,80',
+    tag: 'Foco',
+    category: 'Performance e energia',
+    subtitle: 'Combo para concentracao e produtividade.',
+    description: 'Kit para apoiar foco, concentracao e rotina produtiva.',
+    details: 'Boa tela para apresentar combos e economia, reforcando o custo-beneficio da compra em kit.',
+    benefits: ['Ajuda na rotina de foco', 'Kit com melhor custo-beneficio', 'Ideal para estudo e trabalho'],
+    ingredients: ['Coenzima Q10', 'Tirosina', 'Colina'],
+    usage: 'Consumir conforme recomendacao do rotulo.',
+    image: brainFuelKitImg,
+  },
+  {
+    id: 'creatina-gummy-kit',
+    name: 'Creatina Gummy Kit com 3',
+    price: 'R$349,90',
+    oldPrice: 'R$449,70',
+    tag: 'Combo',
+    category: 'Performance e energia',
+    subtitle: 'Kit economico com 3 unidades de Creatina Gummy.',
+    description: 'Mais unidades para manter consistencia por mais tempo.',
+    details: 'Tela de combo ideal para aumentar ticket medio, destacando economia e recorrencia de uso.',
+    benefits: ['Economia no kit', 'Mais praticidade por mais tempo', 'Boa opcao para uso recorrente'],
+    ingredients: ['Creatina monohidratada', 'Gomas mastigaveis', 'Sabor uva verde'],
+    usage: 'Consuma conforme orientacao do rotulo.',
+    image: creatinaGummyKitImg,
+  },
+  {
+    id: 'pulse-flex-kit',
+    name: 'Pulse Flex Kit com 2',
+    price: 'R$149,90',
+    oldPrice: 'R$179,80',
+    tag: 'Combo',
+    category: 'Rotina e bem-estar',
+    subtitle: 'Kit com 2 unidades para cuidado continuo.',
+    description: 'Combo para manter a rotina de mobilidade e bem-estar.',
+    details: 'Produto para reforcar compra em kit com foco em cuidado prolongado e economia.',
+    benefits: ['Economia no combo', 'Suporte continuo para articulacoes', 'Mais praticidade para recompra'],
+    ingredients: ['Colageno tipo 2', 'Curcuma', 'Capsulas'],
+    usage: 'Use diariamente conforme recomendacao do fabricante.',
+    image: pulseFlexKitImg,
+  },
+]
+
+const featuredProducts = productCatalog.slice(0, 3)
+
+const combos = [productCatalog[8], productCatalog[9], productCatalog[10]]
+
+const testimonials = [
+  {
+    text: 'A creatina gummy ficou perfeita para minha rotina. Levo na bolsa, tomo sem complicação e senti melhora nos treinos.',
+    name: 'Solange Dias',
+    detail: 'Cliente Pulsepro',
+    photo: 'https://i.pravatar.cc/160?img=47',
+  },
+  {
+    text: 'O Pulse Flex me ajudou muito no dia a dia. A experiência de compra foi rápida e o produto chegou bem embalado.',
+    name: 'Rafael Monteiro',
+    detail: 'Compra verificada',
+    photo: 'https://i.pravatar.cc/160?img=12',
+  },
+  {
+    text: 'Gostei da apresentação da marca e da confiança das informações. Parece uma loja séria, moderna e fácil de comprar.',
+    name: 'Carlos Antônio',
+    detail: 'Cliente recorrente',
+    photo: 'https://i.pravatar.cc/160?img=68',
+  },
+  {
+    text: 'Comprei o kit de gummies e achei a apresentação muito profissional. O site passa segurança e deixa tudo fácil de entender.',
+    name: 'Marina Lopes',
+    detail: 'Compra em combo',
+    photo: 'https://i.pravatar.cc/160?img=32',
+  },
+  {
+    text: 'O pré-treino me acompanha nos dias mais puxados. Gostei de ver os benefícios separados, ajuda muito na decisão.',
+    name: 'Bruno Martins',
+    detail: 'Atleta amador',
+    photo: 'https://i.pravatar.cc/160?img=59',
+  },
+  {
+    text: 'A seção de segurança e os depoimentos fazem diferença. Dá vontade de continuar navegando e conhecer outros produtos.',
+    name: 'Patrícia Nunes',
+    detail: 'Cliente nova',
+    photo: 'https://i.pravatar.cc/160?img=44',
+  },
+]
+
+const loopingTestimonials = [...testimonials, ...testimonials]
+const benefitTicker = ['Creatina', 'Pre-treino', 'Colageno', 'Melatonina', 'Beleza', 'Mobilidade', 'Foco', 'Energia']
+const categoryCarouselItems = [
+  { label: 'Todos', image: creatinaGummyKitImg },
+  { label: 'Performance e energia', image: creatinaGummyImg },
+  { label: 'Rotina e bem-estar', image: pulseFlexImg },
+  { label: 'Beleza', image: belezaCategoriaImg },
+]
+const bannerSlides = [bannerPerformance, bannerWellness]
+const categorySlugs: Record<string, string> = {
+  Todos: 'todos',
+  'Performance e energia': 'performance-e-energia',
+  'Rotina e bem-estar': 'rotina-e-bem-estar',
+  Beleza: 'beleza',
+}
+const navigationLinks = [
+  { label: 'Inicio', href: '#' },
+  { label: 'Produtos', href: '#produtos' },
+  { label: 'Combos', href: '#combos' },
+  { label: 'Sobre', href: '#sobre' },
+  { label: 'Contato', href: '#contato' },
+]
+
+const parsePrice = (price: string) => Number(price.replace('R$', '').replace(/\./g, '').replace(',', '.'))
+const formatCurrency = (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+
+function App() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isCartOpen, setIsCartOpen] = useState(false)
+  const [isAccountOpen, setIsAccountOpen] = useState(false)
+  const [isImageZoomOpen, setIsImageZoomOpen] = useState(false)
+  const [accountMode, setAccountMode] = useState<'login' | 'register'>('login')
+  const [cartItems, setCartItems] = useState<CartItem[]>([])
+  const [categoryStartIndex, setCategoryStartIndex] = useState(0)
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
+  const [categoryPage, setCategoryPage] = useState<string | null>(null)
+  const [activeCategory, setActiveCategory] = useState('Todos')
+  const [bannerIndex, setBannerIndex] = useState(0)
+  const [sortOrder, setSortOrder] = useState('padrao')
+
+  const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0)
+  const cartSubtotal = cartItems.reduce((total, item) => total + parsePrice(item.price) * item.quantity, 0)
+  const orderedCategories = categoryCarouselItems.map((_, index) => categoryCarouselItems[(categoryStartIndex + index) % categoryCarouselItems.length])
+  const filteredProducts = productCatalog.filter((product) => {
+    if (activeCategory === 'Todos') {
+      return true
+    }
+
+    if (activeCategory === 'Performance e energia') {
+      return product.category === activeCategory || product.tag === 'Performance' || product.tag === 'Foco'
+    }
+
+    if (activeCategory === 'Rotina e bem-estar') {
+      return product.category === activeCategory || product.tag === 'Bem-estar' || product.tag === 'Sono'
+    }
+
+    return product.category === activeCategory || product.tag === activeCategory
+  })
+  const sortedProducts = [...filteredProducts].sort((firstProduct, secondProduct) => {
+    if (sortOrder === 'menor-preco') {
+      return parsePrice(firstProduct.price) - parsePrice(secondProduct.price)
+    }
+
+    if (sortOrder === 'maior-preco') {
+      return parsePrice(secondProduct.price) - parsePrice(firstProduct.price)
+    }
+
+    if (sortOrder === 'ofertas') {
+      return Number(Boolean(secondProduct.oldPrice)) - Number(Boolean(firstProduct.oldPrice))
+    }
+
+    return 0
+  })
+
+  const addToCart = (product: Product) => {
+    setCartItems((items) => {
+      const existingItem = items.find((item) => item.name === product.name)
+
+      if (existingItem) {
+        return items.map((item) => (item.name === product.name ? { ...item, quantity: item.quantity + 1 } : item))
+      }
+
+      return [...items, { ...product, quantity: 1 }]
+    })
+    setIsCartOpen(true)
+  }
+
+  const updateCartQuantity = (productName: string, change: number) => {
+    setCartItems((items) =>
+      items
+        .map((item) => (item.name === productName ? { ...item, quantity: item.quantity + change } : item))
+        .filter((item) => item.quantity > 0),
+    )
+  }
+
+  const showNextCategory = () => {
+    setCategoryStartIndex((index) => (index + 1) % categoryCarouselItems.length)
+  }
+
+  const showPreviousCategory = () => {
+    setCategoryStartIndex((index) => (index - 1 + categoryCarouselItems.length) % categoryCarouselItems.length)
+  }
+
+  const navigateHome = () => {
+    setSelectedProduct(null)
+    setCategoryPage(null)
+    setIsMenuOpen(false)
+    window.history.pushState(null, '', '/')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const navigateToHomeSection = (sectionId?: string) => {
+    setSelectedProduct(null)
+    setCategoryPage(null)
+    setIsMenuOpen(false)
+    window.history.pushState(null, '', sectionId ? `/#${sectionId}` : '/')
+
+    window.setTimeout(() => {
+      if (!sectionId) {
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+        return
+      }
+
+      document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 0)
+  }
+
+  const openProduct = (product: Product) => {
+    setSelectedProduct(product)
+    setCategoryPage(null)
+    setIsImageZoomOpen(false)
+    setIsMenuOpen(false)
+    window.history.pushState(null, '', `/produto/${product.id}`)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const closeProduct = () => {
+    navigateHome()
+  }
+
+  const openCategory = (category: string) => {
+    setActiveCategory(category)
+    setCategoryPage(category)
+    setSelectedProduct(null)
+    setIsMenuOpen(false)
+    window.history.pushState(null, '', `/categoria/${categorySlugs[category] ?? 'todos'}`)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setCategoryStartIndex((index) => (index + 1) % categoryCarouselItems.length)
+    }, 4200)
+
+    return () => window.clearInterval(intervalId)
+  }, [])
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setBannerIndex((index) => (index + 1) % bannerSlides.length)
+    }, 5200)
+
+    return () => window.clearInterval(intervalId)
+  }, [])
+
+  useEffect(() => {
+    const syncRoute = () => {
+      const [, routeType, routeSlug] = window.location.pathname.split('/')
+
+      if (routeType === 'produto' && routeSlug) {
+        const product = productCatalog.find((item) => item.id === routeSlug)
+        setSelectedProduct(product ?? null)
+        setCategoryPage(null)
+        return
+      }
+
+      if (routeType === 'categoria' && routeSlug) {
+        const category = Object.keys(categorySlugs).find((label) => categorySlugs[label] === routeSlug) ?? 'Todos'
+        setActiveCategory(category)
+        setCategoryPage(category)
+        setSelectedProduct(null)
+        return
+      }
+
+      setSelectedProduct(null)
+      setCategoryPage(null)
+    }
+
+    syncRoute()
+    window.addEventListener('popstate', syncRoute)
+
+    return () => window.removeEventListener('popstate', syncRoute)
+  }, [])
+
+  useEffect(() => {
+    const closeZoomOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsImageZoomOpen(false)
+      }
+    }
+
+    window.addEventListener('keydown', closeZoomOnEscape)
+
+    return () => window.removeEventListener('keydown', closeZoomOnEscape)
+  }, [])
+
+  return (
+    <div className="min-h-screen overflow-x-hidden bg-white text-slate-950">
+      <a className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-cyan-300 focus:px-5 focus:py-3 focus:font-bold focus:text-blue-950" href="#produtos">
+        Pular para produtos
+      </a>
+
+      <div className="bg-gradient-to-r from-blue-950 via-sky-800 to-cyan-400 px-4 py-2 text-center text-xs font-semibold uppercase tracking-[0.18em] text-white sm:text-sm">
+        <span className="promo-sweep inline-block">Parcele em ate 12x no cartao</span>
+      </div>
+
+      <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-4 sm:px-6 lg:px-8">
+          <a href="/" className="group flex min-w-0 items-center gap-3" aria-label="Pulsepro inicio" onClick={(event) => {
+            event.preventDefault()
+            navigateHome()
+          }}>
+            <img className="h-12 w-auto object-contain sm:h-16" src={logoPulsepro} alt="Pulsepro" />
+          </a>
+
+          <label className="ml-auto hidden min-w-72 flex-1 items-center gap-3 rounded-full border border-slate-200 bg-slate-50 px-5 py-3 text-slate-500 shadow-inner lg:flex">
+            <Search className="size-5" aria-hidden="true" />
+            <span className="sr-only">Pesquisar produtos</span>
+            <input className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400" placeholder="Pesquise produtos..." />
+          </label>
+
+          <nav className="hidden items-center gap-7 text-sm font-bold uppercase text-slate-700 lg:flex" aria-label="Navegacao principal">
+            {navigationLinks.slice(0, 4).map((link) => (
+              <a
+                key={link.href}
+                className="first:text-sky-700 hover:text-cyan-500"
+                href={link.href}
+                onClick={(event) => {
+                  event.preventDefault()
+                  navigateToHomeSection(link.href === '#' ? undefined : link.href.replace('#', ''))
+                }}
+              >
+                {link.label}
+              </a>
+            ))}
+          </nav>
+
+          <div className="ml-auto flex items-center gap-2 lg:ml-0">
+            <button
+              type="button"
+              className="grid size-11 place-items-center rounded-full border border-slate-200 text-blue-950 transition hover:border-cyan-400 hover:bg-cyan-50 active:scale-95 focus:outline-none focus:ring-4 focus:ring-cyan-100"
+              aria-label="Minha conta"
+              onClick={() => setIsAccountOpen(true)}
+            >
+              <UserRound className="size-5" />
+            </button>
+            <button
+              type="button"
+              className="relative grid size-11 place-items-center rounded-full bg-blue-950 text-white transition hover:bg-sky-800 active:scale-95 focus:outline-none focus:ring-4 focus:ring-cyan-100"
+              aria-label={`Carrinho com ${cartCount} itens`}
+              onClick={() => setIsCartOpen(true)}
+            >
+              <ShoppingCart className="size-5" />
+              <span className="absolute -right-1 -top-1 grid size-5 place-items-center rounded-full bg-red-500 text-xs font-bold">{cartCount}</span>
+            </button>
+            <button
+              type="button"
+              className="grid size-11 place-items-center rounded-full border border-slate-200 text-blue-950 active:scale-95 focus:outline-none focus:ring-4 focus:ring-cyan-100 lg:hidden"
+              aria-label={isMenuOpen ? 'Fechar menu' : 'Abrir menu'}
+              aria-controls="mobile-menu"
+              aria-expanded={isMenuOpen}
+              onClick={() => setIsMenuOpen((open) => !open)}
+            >
+              {isMenuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+            </button>
+          </div>
+        </div>
+        <nav
+          id="mobile-menu"
+          className={`${isMenuOpen ? 'mobile-menu-enter grid' : 'hidden'} border-t border-slate-200 bg-white px-4 py-4 shadow-xl lg:hidden`}
+          aria-label="Navegacao mobile"
+        >
+          <label className="mb-4 flex items-center gap-3 rounded-full border border-slate-200 bg-slate-50 px-5 py-3 text-slate-500 shadow-inner">
+            <Search className="size-5" aria-hidden="true" />
+            <span className="sr-only">Pesquisar produtos</span>
+            <input className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400" placeholder="Pesquise produtos..." />
+          </label>
+          {navigationLinks.map((link) => (
+            <a
+              key={link.href}
+              className="mobile-tap-lift rounded-lg px-3 py-3 text-sm font-black uppercase text-slate-800 transition hover:bg-cyan-50 hover:text-sky-700 active:scale-[0.98] active:bg-cyan-50 focus:outline-none focus:ring-4 focus:ring-cyan-100"
+              href={link.href}
+              onClick={(event) => {
+                event.preventDefault()
+                navigateToHomeSection(link.href === '#' ? undefined : link.href.replace('#', ''))
+              }}
+            >
+              {link.label}
+            </a>
+          ))}
+        </nav>
+      </header>
+
+      {selectedProduct ? (
+        <main>
+          <section className="bg-white px-4 py-10 sm:px-6 lg:px-8">
+            <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-start">
+              <div className="grid gap-5">
+                <button type="button" className="mobile-tap-lift inline-flex w-fit items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-black uppercase text-sky-700 transition hover:bg-cyan-50 active:scale-95 focus:outline-none focus:ring-4 focus:ring-cyan-100" onClick={closeProduct}>
+                  <ChevronRight className="size-5 rotate-180" aria-hidden="true" />
+                  Voltar para loja
+                </button>
+
+                <button type="button" className="mobile-tap-lift group relative grid min-h-[360px] cursor-zoom-in place-items-center overflow-hidden rounded-lg bg-white p-4 text-left focus:outline-none focus:ring-4 focus:ring-cyan-100 sm:min-h-[420px]" aria-label={`Ampliar imagem de ${selectedProduct.name}`} onClick={() => setIsImageZoomOpen(true)}>
+                  <Search className="absolute right-5 top-5 z-10 size-6 text-slate-950" aria-hidden="true" />
+                  <span className="absolute bottom-5 left-1/2 z-20 -translate-x-1/2 rounded-full bg-slate-950/80 px-4 py-2 text-xs font-black uppercase tracking-[0.12em] text-white opacity-0 backdrop-blur transition duration-300 group-hover:opacity-100">
+                    Clique para ampliar
+                  </span>
+                  <div className="absolute inset-6 rounded-full bg-cyan-100/60 opacity-0 blur-3xl transition duration-500 group-hover:opacity-100" />
+                  <img className="mobile-product-drift relative z-10 max-h-[440px] w-full object-contain drop-shadow-xl transition duration-700 group-hover:scale-150 sm:max-h-[520px]" src={selectedProduct.image} alt={`Embalagem ${selectedProduct.name}`} />
+                </button>
+
+                <button type="button" className="mobile-tap-lift group w-28 overflow-hidden rounded-md border border-slate-200 bg-white p-2 shadow-sm transition hover:border-cyan-300 focus:outline-none focus:ring-4 focus:ring-cyan-100" aria-label={`Abrir zoom de ${selectedProduct.name}`} onClick={() => setIsImageZoomOpen(true)}>
+                  <img className="h-20 w-full object-contain transition duration-500 group-hover:scale-150" src={selectedProduct.image} alt="" aria-hidden="true" />
+                </button>
+              </div>
+
+              <div className="pt-2">
+                <nav className="text-sm font-medium text-slate-500" aria-label="Caminho do produto">
+                  Inicio / Produtos / {selectedProduct.category ?? selectedProduct.tag ?? 'Pulsepro'} / {selectedProduct.name}
+                </nav>
+
+                <h1 className="mt-8 max-w-2xl text-4xl font-black leading-tight text-slate-800 sm:text-5xl">{selectedProduct.name}</h1>
+
+                <ul className="mt-7 grid gap-2 text-lg leading-7 text-slate-600">
+                  {(selectedProduct.benefits ?? []).map((benefit, index) => (
+                    <li key={benefit} className="flex items-start gap-2">
+                      <span aria-hidden="true">{['🧠', '🎯', '✨', '🌿'][index % 4]}</span>
+                      <span>{benefit};</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <div className="mt-10 flex flex-wrap items-end gap-3">
+                  {selectedProduct.oldPrice && <span className="text-3xl font-black text-slate-500 line-through">{selectedProduct.oldPrice}</span>}
+                  <strong className="text-4xl font-black text-green-700">{selectedProduct.price}</strong>
+                </div>
+
+                <div className="mt-9 flex flex-col gap-4 sm:flex-row sm:items-center">
+                  <label className="sr-only" htmlFor="product-quantity">Quantidade</label>
+                  <input id="product-quantity" className="h-14 w-16 rounded-2xl border border-slate-300 text-center text-lg text-slate-800 outline-none focus:border-cyan-400 focus:ring-4 focus:ring-cyan-100" type="number" min="1" defaultValue="1" />
+                  <button type="button" className="button-shine mobile-cta-bounce mobile-tap-lift inline-flex h-14 items-center justify-center gap-3 overflow-hidden rounded-full bg-slate-800 px-8 text-base font-black uppercase text-white transition hover:bg-blue-950 active:scale-[0.98] focus:outline-none focus:ring-4 focus:ring-cyan-100" onClick={() => addToCart(selectedProduct)}>
+                    <ShoppingCart className="size-5" aria-hidden="true" />
+                    Adicionar ao carrinho
+                  </button>
+                </div>
+
+                <div className="mt-10 rounded-lg border border-slate-200 bg-slate-50 p-6">
+                  <h2 className="text-xl font-black uppercase text-slate-950">Sobre o produto</h2>
+                  <p className="mt-3 leading-7 text-slate-700">{selectedProduct.details ?? selectedProduct.description}</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section className="px-4 py-12 sm:px-6 lg:px-8">
+            <div className="mx-auto grid max-w-7xl gap-5 md:grid-cols-3">
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-6">
+                  <h2 className="text-xl font-black uppercase text-slate-950">Ingredientes em destaque</h2>
+                  <ul className="mt-4 grid gap-3">
+                    {(selectedProduct.ingredients ?? []).map((ingredient) => (
+                      <li key={ingredient} className="flex items-center gap-3 text-slate-700">
+                        <Sparkles className="size-5 shrink-0 text-cyan-500" aria-hidden="true" />
+                        <span>{ingredient}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+                  <h2 className="text-xl font-black uppercase text-slate-950">Como usar</h2>
+                  <p className="mt-3 leading-7 text-slate-700">{selectedProduct.usage}</p>
+                </div>
+                <div className="rounded-lg bg-gradient-to-br from-blue-950 to-cyan-500 p-6 text-white">
+                  <ShieldCheck className="size-9" aria-hidden="true" />
+                  <h2 className="mt-4 text-xl font-black uppercase">Compra segura</h2>
+                  <p className="mt-2 text-cyan-50">Checkout preparado para integrar pagamento, frete e cadastro do cliente.</p>
+                </div>
+            </div>
+          </section>
+
+          <section className="bg-slate-50 px-4 py-14 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-7xl">
+              <div className="flex items-end justify-between gap-4">
+                <div>
+                  <span className="block h-1 w-20 rounded-full bg-sky-600" />
+                  <h2 className="mt-5 text-3xl font-black text-slate-950">Veja tambem</h2>
+                </div>
+                <button type="button" className="font-black uppercase text-sky-700" onClick={closeProduct}>Todos produtos</button>
+              </div>
+              <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                {productCatalog
+                  .filter((product) => product.id !== selectedProduct.id)
+                  .slice(0, 4)
+                  .map((product) => (
+                    <article key={product.id} className="group rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
+                      <button type="button" className="w-full text-left" onClick={() => openProduct(product)}>
+                        <div className="flex h-44 items-center justify-center overflow-hidden rounded-md bg-cyan-50">
+                          <img className="h-36 object-contain transition duration-500 group-hover:scale-[1.35]" src={product.image} alt={`Produto ${product.name}`} />
+                        </div>
+                        <p className="mt-4 text-sm font-black uppercase text-sky-700">{product.tag}</p>
+                        <h3 className="mt-2 min-h-12 text-lg font-black text-slate-950">{product.name}</h3>
+                        <p className="mt-2 text-2xl font-black text-slate-950">{product.price}</p>
+                      </button>
+                    </article>
+                  ))}
+              </div>
+            </div>
+          </section>
+        </main>
+      ) : categoryPage ? (
+        <main>
+          <section className="bg-slate-50 px-4 py-14 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-7xl">
+              <button type="button" className="mb-8 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-black uppercase text-sky-700 transition hover:bg-cyan-50 active:scale-95 focus:outline-none focus:ring-4 focus:ring-cyan-100" onClick={navigateHome}>
+                <ChevronRight className="size-5 rotate-180" aria-hidden="true" />
+                Voltar para home
+              </button>
+
+              <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <span className="block h-1 w-20 rounded-full bg-sky-600" />
+                  <h1 className="mt-6 text-4xl font-black text-slate-950 sm:text-5xl">
+                    {activeCategory === 'Todos' ? 'Todos os produtos' : activeCategory}
+                  </h1>
+                  <p className="mt-3 max-w-2xl text-lg text-slate-600">
+                    Escolha uma categoria e veja somente os produtos relacionados a ela.
+                  </p>
+                </div>
+                <label className="grid gap-2 text-sm font-bold text-slate-700 sm:min-w-80">
+                  <span className="sr-only">Ordenar produtos</span>
+                  <select className="rounded border border-slate-400 bg-white px-4 py-3 text-base text-slate-900 outline-none focus:border-cyan-400 focus:ring-4 focus:ring-cyan-100" value={sortOrder} onChange={(event) => setSortOrder(event.target.value)}>
+                    <option value="padrao">Ordenacao padrao</option>
+                    <option value="menor-preco">Menor preco</option>
+                    <option value="maior-preco">Maior preco</option>
+                    <option value="ofertas">Ofertas</option>
+                  </select>
+                </label>
+              </div>
+
+              <div className="mt-8 flex flex-wrap gap-2">
+                {categoryCarouselItems.map((category) => (
+                  <button
+                    key={category.label}
+                    type="button"
+                    className={`${activeCategory === category.label ? 'bg-blue-950 text-white' : 'bg-white text-slate-700'} rounded-full border border-slate-200 px-4 py-2 text-sm font-black uppercase transition hover:border-cyan-300 active:scale-95 focus:outline-none focus:ring-4 focus:ring-cyan-100`}
+                    onClick={() => openCategory(category.label)}
+                  >
+                    {category.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="mt-9 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {sortedProducts.map((product, index) => (
+                  <article key={product.id} className="mobile-card-motion mobile-tap-lift reveal-card group rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-cyan-200 hover:shadow-xl active:scale-[0.99]" style={{ animationDelay: `${index * 0.08}s` }}>
+                    <button type="button" className="mobile-tap-lift w-full text-left" onClick={() => openProduct(product)}>
+                      <div className="flex h-56 items-center justify-center overflow-hidden rounded-md bg-gradient-to-b from-white to-cyan-50">
+                        <img className="h-44 object-contain transition duration-500 group-hover:scale-[1.35] group-hover:-rotate-2" src={product.image} alt={`Produto ${product.name}`} />
+                      </div>
+                      <p className="mt-5 text-sm font-bold uppercase text-sky-700">{product.tag}</p>
+                      <h2 className="mt-2 min-h-14 text-lg font-bold text-slate-900">{product.name}</h2>
+                      <p className="mt-3 text-2xl font-black text-slate-900">
+                        {product.oldPrice && <span className="mr-2 text-lg text-red-500 line-through">{product.oldPrice}</span>}
+                        {product.price}
+                      </p>
+                    </button>
+                    <button type="button" className="mobile-tap-lift mt-4 text-sm font-black uppercase text-sky-700 underline-offset-4 hover:underline" onClick={() => openProduct(product)}>
+                      Ver detalhes
+                    </button>
+                    <button
+                      type="button"
+                      className="button-shine mobile-tap-lift mt-5 overflow-hidden rounded-full bg-slate-200 px-5 py-3 text-sm font-black uppercase text-slate-700 transition hover:bg-cyan-300 hover:text-blue-950 active:scale-[0.98] focus:outline-none focus:ring-4 focus:ring-cyan-100"
+                      onClick={() => addToCart(product)}
+                    >
+                      Adicionar ao carrinho
+                    </button>
+                  </article>
+                ))}
+              </div>
+            </div>
+          </section>
+        </main>
+      ) : (
+      <main>
+        <section className="relative overflow-hidden bg-slate-950" aria-label="Banners Pulsepro">
+          <img className="mobile-banner-kenburns aspect-[1440/599] min-h-[220px] w-full object-cover object-center sm:min-h-0" src={bannerSlides[bannerIndex]} alt="Banner promocional Pulsepro" />
+          <div className="absolute bottom-6 left-1/2 flex -translate-x-1/2 gap-2">
+            {bannerSlides.map((_, index) => (
+              <button
+                key={index}
+                type="button"
+                className={`${bannerIndex === index ? 'w-8 bg-cyan-300' : 'w-2 bg-white/50'} h-2 rounded-full transition-all focus:outline-none focus:ring-4 focus:ring-cyan-100`}
+                aria-label={`Mostrar banner ${index + 1}`}
+                onClick={() => setBannerIndex(index)}
+              />
+            ))}
+          </div>
+        </section>
+
+        <section className="overflow-hidden border-y border-cyan-100 bg-white py-4" aria-label="Categorias em destaque">
+          <div className="ticker-track flex w-max gap-4">
+            {[...benefitTicker, ...benefitTicker, ...benefitTicker].map((item, index) => (
+              <span key={`${item}-${index}`} className="inline-flex items-center gap-2 rounded-full border border-cyan-200 bg-cyan-50 px-5 py-3 text-sm font-black uppercase tracking-[0.12em] text-blue-950">
+                <Sparkles className="size-4 text-cyan-500" aria-hidden="true" />
+                {item}
+              </span>
+            ))}
+          </div>
+        </section>
+
+        <section className="bg-white px-4 py-16 sm:px-6 lg:px-8" id="produtos" aria-label="Carrossel de categorias">
+          <div className="mx-auto max-w-7xl">
+            <div className="text-center">
+              <span className="mx-auto block h-1 w-20 rounded-full bg-sky-600" />
+              <h2 className="mt-6 text-3xl font-black text-slate-900 sm:text-4xl">Conheca nossos produtos</h2>
+            </div>
+
+            <div className="relative mt-10">
+              <button
+                type="button"
+                className="absolute left-0 top-1/2 z-10 hidden size-12 -translate-y-1/2 place-items-center rounded-full bg-white text-slate-500 shadow-xl transition hover:text-sky-700 active:scale-95 focus:outline-none focus:ring-4 focus:ring-cyan-100 md:grid"
+                aria-label="Categoria anterior"
+                onClick={showPreviousCategory}
+              >
+                <ChevronRight className="size-6 rotate-180" aria-hidden="true" />
+              </button>
+
+              <div className="category-carousel-grid mx-auto grid max-w-6xl grid-cols-2 gap-6 md:grid-cols-4 md:gap-8">
+                {orderedCategories.map((category, index) => (
+                  <button
+                    type="button"
+                    key={`${category.label}-${categoryStartIndex}`}
+                    className="category-carousel-item mobile-tap-lift group grid justify-items-center text-center"
+                    style={{ animationDelay: `${index * 0.08}s` }}
+                    onClick={() => openCategory(category.label)}
+                  >
+                    <span className="mobile-category-pulse relative grid size-36 place-items-center rounded-full bg-gradient-to-br from-blue-950 to-cyan-400 shadow-xl shadow-sky-900/15 transition duration-300 group-hover:-translate-y-1 group-hover:shadow-2xl group-active:scale-95 sm:size-44 lg:size-52">
+                      <img
+                        className="h-full w-full rounded-full object-cover object-center transition duration-500 group-hover:scale-105"
+                        src={category.image}
+                        alt={`Categoria ${category.label}`}
+                      />
+                      <span className="absolute inset-0 rounded-full bg-gradient-to-t from-blue-950/10 to-transparent" />
+                    </span>
+                    <strong className="mt-5 max-w-40 text-base font-black uppercase leading-tight text-slate-900 sm:text-lg">
+                      {category.label}
+                    </strong>
+                  </button>
+                ))}
+              </div>
+
+              <button
+                type="button"
+                className="absolute right-0 top-1/2 z-10 hidden size-12 -translate-y-1/2 place-items-center rounded-full bg-white text-slate-500 shadow-xl transition hover:text-sky-700 active:scale-95 focus:outline-none focus:ring-4 focus:ring-cyan-100 md:grid"
+                aria-label="Proxima categoria"
+                onClick={showNextCategory}
+              >
+                <ChevronRight className="size-6" aria-hidden="true" />
+              </button>
+            </div>
+
+            <div className="mt-8 flex justify-center gap-2" aria-label="Indicadores do carrossel de categorias">
+              {categoryCarouselItems.map((category, index) => (
+                <button
+                  key={category.label}
+                  type="button"
+                  className={`${categoryStartIndex === index ? 'w-7 bg-sky-700' : 'w-2 bg-slate-300'} h-2 rounded-full transition-all focus:outline-none focus:ring-4 focus:ring-cyan-100`}
+                  aria-label={`Mostrar ${category.label}`}
+                  onClick={() => setCategoryStartIndex(index)}
+                />
+              ))}
+            </div>
+
+            <div className="mt-6 flex justify-center gap-3 md:hidden">
+              <button type="button" className="grid size-11 place-items-center rounded-full border border-slate-200 text-slate-600 shadow-sm active:scale-95" aria-label="Categoria anterior" onClick={showPreviousCategory}>
+                <ChevronRight className="size-5 rotate-180" aria-hidden="true" />
+              </button>
+              <button type="button" className="grid size-11 place-items-center rounded-full bg-blue-950 text-white shadow-sm active:scale-95" aria-label="Proxima categoria" onClick={showNextCategory}>
+                <ChevronRight className="size-5" aria-hidden="true" />
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section className="bg-slate-100 px-4 py-9 sm:px-6 lg:px-8">
+          <div className="mx-auto grid max-w-7xl gap-5 md:grid-cols-3">
+            {[
+              { icon: Leaf, title: 'Produtos naturais', text: 'Formulas e ingredientes selecionados para sua rotina.' },
+              { icon: CreditCard, title: 'Pagamento facilitado', text: 'Parcele em ate 12x no cartao de credito.' },
+              { icon: LockKeyhole, title: 'Compra segura', text: 'Ambiente visual claro para vender com mais confianca.' },
+            ].map(({ icon: Icon, title, text }) => (
+              <article key={title} className="mobile-card-motion reveal-card group flex items-start gap-4 rounded-lg bg-white p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl active:scale-[0.99]">
+                <span className="mobile-icon-pop grid size-12 shrink-0 place-items-center rounded-full bg-cyan-100 text-sky-700 transition duration-300 group-hover:rotate-6 group-hover:scale-110 group-hover:bg-cyan-300">
+                  <Icon className="size-6" aria-hidden="true" />
+                </span>
+                <div>
+                  <h2 className="text-lg font-black uppercase text-sky-700">{title}</h2>
+                  <p className="mt-1 text-slate-600">{text}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-3xl text-center">
+            <span className="mx-auto block h-1 w-20 rounded-full bg-sky-600" />
+            <h2 className="mt-6 text-3xl font-black text-slate-900 sm:text-4xl">Destaques que vendem beneficio antes do preco</h2>
+            <p className="mt-4 text-lg text-slate-600">Cards grandes para apresentar os produtos principais com argumentos fortes e chamada direta.</p>
+          </div>
+
+          <div className="mt-10 grid gap-7 lg:grid-cols-3">
+            {featuredProducts.map((product, index) => (
+              <article key={product.name} className="mobile-card-motion mobile-tap-lift shine-card animated-border group overflow-hidden rounded-lg bg-gradient-to-br from-blue-950 via-sky-900 to-sky-700 p-6 text-white shadow-2xl shadow-slate-900/15 transition duration-300 hover:-translate-y-2 active:scale-[0.99]" style={{ animationDelay: `${index * 0.12}s` }}>
+                <button type="button" className="mobile-tap-lift w-full text-left" onClick={() => openProduct(product)}>
+                <div className="relative flex h-52 items-center justify-center overflow-hidden rounded-md">
+                  <div className="absolute h-36 w-36 rounded-full bg-cyan-300/25 blur-2xl transition group-hover:scale-125" />
+                  <img className="relative z-10 h-48 object-contain drop-shadow-2xl transition duration-500 group-hover:scale-[1.35]" src={product.image} alt={`Embalagem ${product.name}`} />
+                </div>
+                <p className="mt-3 text-sm font-bold uppercase tracking-[0.16em] text-cyan-200">{product.category}</p>
+                <h3 className="mt-3 text-3xl font-black uppercase">{product.name}</h3>
+                <p className="mt-3 text-cyan-50">{product.description}</p>
+                <ul className="mt-5 grid gap-3">
+                  {(product.benefits ?? []).map((benefit) => (
+                    <li key={benefit} className="flex gap-3 text-lg font-bold">
+                      <BadgeCheck className="mt-1 size-5 shrink-0 text-lime-300" aria-hidden="true" />
+                      <span>{benefit}</span>
+                    </li>
+                  ))}
+                </ul>
+                </button>
+                <button type="button" className="mobile-tap-lift mt-5 text-sm font-black uppercase text-cyan-200 underline-offset-4 hover:underline" onClick={() => openProduct(product)}>
+                  Ver detalhes
+                </button>
+                <button
+                  type="button"
+                  className="button-shine mobile-cta-bounce mobile-tap-lift mt-7 inline-flex w-full items-center justify-center gap-3 overflow-hidden rounded-full bg-cyan-300 px-6 py-4 text-lg font-black uppercase text-blue-950 transition hover:bg-white active:scale-[0.98] focus:outline-none focus:ring-4 focus:ring-cyan-100"
+                  onClick={() => addToCart(product)}
+                >
+                  <ShoppingCart className="size-5" aria-hidden="true" />
+                  Eu quero
+                </button>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8" id="combos">
+          <div className="text-center">
+            <span className="mx-auto block h-1 w-20 rounded-full bg-sky-600" />
+            <h2 className="mt-6 text-3xl font-black text-slate-900 sm:text-4xl">Aproveite nossos combos e economize</h2>
+          </div>
+          <div className="mt-10 grid gap-5 md:grid-cols-3">
+            {combos.map((combo, index) => (
+              <article key={combo.name} className="mobile-card-motion mobile-tap-lift reveal-card group relative rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-cyan-200 hover:shadow-xl active:scale-[0.99]" style={{ animationDelay: `${index * 0.1}s` }}>
+                <span className="animate-offer absolute left-6 top-6 rounded-full bg-red-600 px-4 py-2 text-sm font-black text-white">Oferta!</span>
+                <button type="button" className="mobile-tap-lift w-full text-left" onClick={() => openProduct(combo)}>
+                <div className="flex h-56 items-center justify-center overflow-hidden rounded-md">
+                  <img className="h-44 object-contain drop-shadow-xl transition duration-500 group-hover:scale-[1.35] group-hover:-rotate-3" src={combo.image} alt={`Combo ${combo.name}`} />
+                  <img className="-ml-16 h-40 object-contain drop-shadow-xl transition duration-500 group-hover:scale-[1.35] group-hover:rotate-3" src={combo.image} alt="" aria-hidden="true" />
+                </div>
+                <h3 className="mt-5 min-h-14 text-xl font-bold text-slate-900">{combo.name}</h3>
+                <p className="mt-3 text-xl">
+                  <span className="mr-2 text-red-500 line-through">{combo.oldPrice}</span>
+                  <span className="font-black text-slate-900">{combo.price}</span>
+                </p>
+                </button>
+                <button type="button" className="mobile-tap-lift mt-4 text-sm font-black uppercase text-sky-700 underline-offset-4 hover:underline" onClick={() => openProduct(combo)}>
+                  Ver detalhes
+                </button>
+                <button
+                  type="button"
+                  className="button-shine mobile-tap-lift mt-6 overflow-hidden rounded-full bg-slate-200 px-5 py-3 text-sm font-black uppercase text-slate-700 transition hover:bg-cyan-300 hover:text-blue-950 active:scale-[0.98] focus:outline-none focus:ring-4 focus:ring-cyan-100"
+                  onClick={() => addToCart(combo)}
+                >
+                  Adicionar ao carrinho
+                </button>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="px-4 pb-16 sm:px-6 lg:px-8" id="sobre">
+          <div className="shine-card mx-auto grid max-w-6xl items-center gap-8 overflow-hidden rounded-lg bg-gradient-to-br from-blue-950 to-cyan-500 p-8 text-white shadow-2xl shadow-cyan-950/20 md:grid-cols-[0.7fr_1.3fr] md:p-12">
+            <div className="flex items-center justify-center">
+              <ShieldCheck className="animate-soft-pulse size-36" aria-hidden="true" />
+            </div>
+            <div>
+              <h2 className="text-3xl font-black uppercase sm:text-4xl">Qualidade e seguranca garantidas</h2>
+              <p className="mt-4 text-lg leading-8 text-cyan-50">
+                Uma area institucional forte para reforcar certificacoes, procedencia e cuidado na escolha dos ingredientes antes da decisao de compra.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="bg-slate-50 px-4 py-16 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-7xl">
+            <div className="text-center">
+              <span className="mx-auto block h-1 w-20 rounded-full bg-sky-600" />
+              <h2 className="mt-6 text-3xl font-black text-slate-900 sm:text-4xl">Uma marca seria e comprometida com resultados</h2>
+              <p className="mt-3 text-lg text-slate-600">Prova social pronta para receber depoimentos reais do cliente.</p>
+            </div>
+            <div className="testimonial-fade mt-10 overflow-hidden" aria-label="Carrossel de depoimentos de clientes">
+              <div className="testimonial-track flex w-max gap-5 py-2">
+                {loopingTestimonials.map((testimonial, index) => (
+                  <article key={`${testimonial.name}-${index}`} className="w-[82vw] max-w-[390px] shrink-0 rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl sm:w-[390px]">
+                    <div className="flex gap-1 text-amber-400" aria-label="5 estrelas">
+                      {Array.from({ length: 5 }).map((_, starIndex) => (
+                        <Star key={starIndex} className="size-5 fill-current" aria-hidden="true" />
+                      ))}
+                    </div>
+                    <p className="mt-4 min-h-36 text-lg leading-8 text-slate-700">"{testimonial.text}"</p>
+                    <div className="mt-6 flex items-center gap-3">
+                      <img
+                        className="size-14 rounded-full border-2 border-cyan-300 object-cover shadow-lg shadow-cyan-900/10"
+                        src={testimonial.photo}
+                        alt={`Foto de ${testimonial.name}`}
+                        loading="lazy"
+                      />
+                      <div>
+                        <p className="font-black text-slate-900">{testimonial.name}</p>
+                        <p className="text-sm text-slate-500">{testimonial.detail}</p>
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+      )}
+
+      <footer className="bg-[#101010] px-4 py-12 text-slate-300 sm:px-6 lg:px-8" id="contato">
+        <div className="mx-auto grid max-w-7xl gap-10 md:grid-cols-[1.1fr_0.7fr_1fr]">
+          <div>
+            <img className="h-20 w-auto object-contain" src={logoPulsepro} alt="Pulsepro" />
+            <div className="mt-6 grid gap-3">
+              <a className="flex items-center gap-3 hover:text-cyan-300" href="mailto:contato@pulsepro.com">
+                <Mail className="size-5" aria-hidden="true" />
+                contato@pulsepro.com
+              </a>
+              <a className="flex items-center gap-3 hover:text-cyan-300" href="https://wa.me/5561998386625">
+                <MessageCircle className="size-5" aria-hidden="true" />
+                +55 (61) 99838-6625
+              </a>
+            </div>
+          </div>
+          <nav className="grid gap-3 text-sm font-bold uppercase" aria-label="Links do rodape">
+            <a className="hover:text-cyan-300" href="#" onClick={(event) => {
+              event.preventDefault()
+              navigateToHomeSection()
+            }}>Inicio</a>
+            <a className="hover:text-cyan-300" href="#produtos" onClick={(event) => {
+              event.preventDefault()
+              navigateToHomeSection('produtos')
+            }}>Produtos</a>
+            <a className="hover:text-cyan-300" href="#combos" onClick={(event) => {
+              event.preventDefault()
+              navigateToHomeSection('combos')
+            }}>Combos</a>
+            <a className="hover:text-cyan-300" href="#sobre" onClick={(event) => {
+              event.preventDefault()
+              navigateToHomeSection('sobre')
+            }}>Sobre</a>
+          </nav>
+          <div className="grid content-start gap-4">
+            <p className="font-black uppercase text-white">Compra protegida</p>
+            <div className="flex flex-wrap gap-3">
+              {['SSL', 'Visa', 'Master', 'Pix'].map((item) => (
+                <span key={item} className="rounded-md bg-white px-4 py-2 text-sm font-black text-slate-900">{item}</span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </footer>
+
+      <a className="animate-whatsapp fixed bottom-5 right-5 z-50 grid size-14 place-items-center rounded-full bg-green-500 text-white shadow-2xl shadow-green-900/25 transition hover:-translate-y-1 hover:bg-green-600 focus:outline-none focus:ring-4 focus:ring-green-200" href="https://wa.me/5561998386625" aria-label="Chamar no WhatsApp">
+        <MessageCircle className="size-7" aria-hidden="true" />
+      </a>
+
+      {selectedProduct && (
+        <div className={`${isImageZoomOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'} fixed inset-0 z-[80] grid place-items-center bg-slate-950/85 px-4 py-6 backdrop-blur-md transition-opacity`} aria-hidden={!isImageZoomOpen}>
+          <button type="button" className="absolute inset-0 h-full w-full cursor-zoom-out" aria-label="Fechar imagem ampliada" onClick={() => setIsImageZoomOpen(false)} />
+          <section className={`${isImageZoomOpen ? 'scale-100 mobile-zoom-pop' : 'scale-95'} relative grid max-h-[calc(100svh-2rem)] w-full max-w-6xl place-items-center rounded-lg bg-white p-4 shadow-2xl transition duration-300 sm:p-8`} aria-label={`Imagem ampliada de ${selectedProduct.name}`}>
+            <button type="button" className="absolute right-4 top-4 z-10 grid size-11 place-items-center rounded-full bg-slate-950 text-white transition hover:bg-sky-800 focus:outline-none focus:ring-4 focus:ring-cyan-100" aria-label="Fechar zoom" onClick={() => setIsImageZoomOpen(false)}>
+              <X className="size-5" aria-hidden="true" />
+            </button>
+            <img className="max-h-[82svh] w-full object-contain drop-shadow-2xl" src={selectedProduct.image} alt={`Imagem ampliada do produto ${selectedProduct.name}`} />
+            <p className="mt-4 text-center text-sm font-bold uppercase tracking-[0.14em] text-slate-500">Pressione Esc ou clique fora para fechar</p>
+          </section>
+        </div>
+      )}
+
+      <div className={`${isCartOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'} fixed inset-0 z-[60] bg-slate-950/55 backdrop-blur-sm transition-opacity`} aria-hidden={!isCartOpen}>
+        <button type="button" className="absolute inset-0 h-full w-full cursor-default" aria-label="Fechar carrinho" onClick={() => setIsCartOpen(false)} />
+        <aside
+          className={`${isCartOpen ? 'translate-x-0' : 'translate-x-full'} absolute right-0 top-0 flex h-full w-full max-w-md flex-col bg-white shadow-2xl transition-transform duration-300`}
+          aria-label="Carrinho de compras"
+        >
+          <div className="flex items-center justify-between border-b border-slate-200 p-5">
+            <div>
+              <p className="text-sm font-black uppercase tracking-[0.14em] text-sky-700">Seu carrinho</p>
+              <h2 className="text-2xl font-black text-slate-950">{cartCount} {cartCount === 1 ? 'item' : 'itens'}</h2>
+            </div>
+            <button type="button" className="grid size-11 place-items-center rounded-full border border-slate-200 text-blue-950 transition hover:bg-slate-100 focus:outline-none focus:ring-4 focus:ring-cyan-100" aria-label="Fechar carrinho" onClick={() => setIsCartOpen(false)}>
+              <X className="size-5" />
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-5">
+            {cartItems.length === 0 ? (
+              <div className="grid h-full place-items-center text-center">
+                <div>
+                  <span className="mx-auto grid size-20 place-items-center rounded-full bg-cyan-50 text-sky-700">
+                    <ShoppingCart className="size-9" aria-hidden="true" />
+                  </span>
+                  <h3 className="mt-5 text-2xl font-black text-slate-950">Carrinho vazio</h3>
+                  <p className="mt-2 text-slate-600">Adicione produtos para montar o pedido do cliente.</p>
+                  <button type="button" className="mt-6 rounded-full bg-cyan-300 px-6 py-3 font-black uppercase text-blue-950 transition hover:bg-cyan-200 focus:outline-none focus:ring-4 focus:ring-cyan-100" onClick={() => setIsCartOpen(false)}>
+                    Ver produtos
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="grid gap-4">
+                {cartItems.map((item) => (
+                  <article key={item.name} className="grid grid-cols-[84px_1fr] gap-4 rounded-lg border border-slate-200 p-3">
+                    <div className="grid h-24 place-items-center rounded-md bg-cyan-50">
+                      <img className="h-20 object-contain" src={item.image} alt={`Produto ${item.name}`} />
+                    </div>
+                    <div>
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <h3 className="font-black text-slate-950">{item.name}</h3>
+                          <p className="text-sm font-bold uppercase text-sky-700">{item.tag ?? item.category ?? 'Pulsepro'}</p>
+                        </div>
+                        <p className="font-black text-slate-950">{item.price}</p>
+                      </div>
+                      <div className="mt-4 flex items-center justify-between">
+                        <div className="flex items-center overflow-hidden rounded-full border border-slate-200">
+                          <button type="button" className="grid size-9 place-items-center text-slate-700 transition hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-cyan-100" aria-label={`Diminuir quantidade de ${item.name}`} onClick={() => updateCartQuantity(item.name, -1)}>
+                            <Minus className="size-4" />
+                          </button>
+                          <span className="grid size-9 place-items-center text-sm font-black">{item.quantity}</span>
+                          <button type="button" className="grid size-9 place-items-center text-slate-700 transition hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-cyan-100" aria-label={`Aumentar quantidade de ${item.name}`} onClick={() => updateCartQuantity(item.name, 1)}>
+                            <Plus className="size-4" />
+                          </button>
+                        </div>
+                        <button type="button" className="text-sm font-bold text-red-600 hover:text-red-700" onClick={() => updateCartQuantity(item.name, -item.quantity)}>
+                          Remover
+                        </button>
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="border-t border-slate-200 p-5">
+            <div className="mb-4 rounded-lg bg-slate-50 p-4">
+              <div className="flex justify-between text-slate-600">
+                <span>Subtotal</span>
+                <strong className="text-slate-950">{formatCurrency(cartSubtotal)}</strong>
+              </div>
+              <div className="mt-2 flex justify-between text-sm text-slate-500">
+                <span>Frete</span>
+                <span>Calculado no checkout</span>
+              </div>
+            </div>
+            <button type="button" className="button-shine inline-flex w-full items-center justify-center gap-2 overflow-hidden rounded-full bg-blue-950 px-6 py-4 font-black uppercase text-white transition hover:bg-sky-800 focus:outline-none focus:ring-4 focus:ring-cyan-100" disabled={cartItems.length === 0}>
+              Finalizar compra
+              <ChevronRight className="size-5" aria-hidden="true" />
+            </button>
+            <button type="button" className="mt-3 w-full rounded-full px-6 py-3 font-black uppercase text-sky-700 transition hover:bg-cyan-50 focus:outline-none focus:ring-4 focus:ring-cyan-100" onClick={() => setIsCartOpen(false)}>
+              Continuar comprando
+            </button>
+          </div>
+        </aside>
+      </div>
+
+      <div className={`${isAccountOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'} fixed inset-0 z-[70] grid place-items-center bg-slate-950/60 px-4 py-6 backdrop-blur-sm transition-opacity`} aria-hidden={!isAccountOpen}>
+        <button type="button" className="absolute inset-0 h-full w-full cursor-default" aria-label="Fechar area da conta" onClick={() => setIsAccountOpen(false)} />
+        <section className={`${isAccountOpen ? 'translate-y-0 scale-100' : 'translate-y-4 scale-95'} relative max-h-[calc(100svh-2rem)] w-full max-w-5xl overflow-y-auto rounded-lg bg-white shadow-2xl transition duration-300`} aria-label="Area da conta">
+          <div className="grid lg:grid-cols-[0.9fr_1.1fr]">
+            <div className="hidden bg-gradient-to-br from-blue-950 via-sky-800 to-cyan-400 p-8 text-white lg:grid lg:content-between">
+              <div>
+                <p className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-2 text-sm font-bold backdrop-blur">
+                  <Lock className="size-4" aria-hidden="true" />
+                  Acesso seguro
+                </p>
+                <h2 className="mt-8 text-4xl font-black uppercase leading-tight">Entre para acompanhar seus pedidos</h2>
+                <p className="mt-4 text-lg leading-8 text-cyan-50">Login e cadastro preparados para conectar com checkout, historico de pedidos e recuperacao de senha.</p>
+              </div>
+              <div className="grid gap-3 text-sm font-bold uppercase tracking-[0.12em] text-cyan-50">
+                <span>Compra rapida</span>
+                <span>Pedidos salvos</span>
+                <span>Atendimento pelo WhatsApp</span>
+              </div>
+            </div>
+
+            <div className="p-5 sm:p-8">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-sm font-black uppercase tracking-[0.14em] text-sky-700">Minha conta</p>
+                  <h2 className="mt-1 text-3xl font-black text-slate-950">{accountMode === 'login' ? 'Entrar' : 'Criar cadastro'}</h2>
+                </div>
+                <button type="button" className="grid size-11 place-items-center rounded-full border border-slate-200 text-blue-950 transition hover:bg-slate-100 focus:outline-none focus:ring-4 focus:ring-cyan-100" aria-label="Fechar area da conta" onClick={() => setIsAccountOpen(false)}>
+                  <X className="size-5" />
+                </button>
+              </div>
+
+              <div className="mt-6 grid grid-cols-2 rounded-full bg-slate-100 p-1">
+                <button type="button" className={`${accountMode === 'login' ? 'bg-white text-blue-950 shadow-sm' : 'text-slate-600'} rounded-full px-4 py-3 text-sm font-black uppercase transition focus:outline-none focus:ring-4 focus:ring-cyan-100`} onClick={() => setAccountMode('login')}>
+                  Login
+                </button>
+                <button type="button" className={`${accountMode === 'register' ? 'bg-white text-blue-950 shadow-sm' : 'text-slate-600'} rounded-full px-4 py-3 text-sm font-black uppercase transition focus:outline-none focus:ring-4 focus:ring-cyan-100`} onClick={() => setAccountMode('register')}>
+                  Cadastro
+                </button>
+              </div>
+
+              <form className="mt-7 grid gap-4" onSubmit={(event) => event.preventDefault()}>
+                {accountMode === 'register' && (
+                  <div className="grid gap-2">
+                    <label className="text-sm font-black uppercase text-slate-700" htmlFor="name">Nome completo</label>
+                    <input id="name" className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-cyan-400 focus:bg-white focus:ring-4 focus:ring-cyan-100" type="text" placeholder="Seu nome" autoComplete="name" />
+                  </div>
+                )}
+
+                <div className="grid gap-2">
+                  <label className="text-sm font-black uppercase text-slate-700" htmlFor="email">E-mail</label>
+                  <input id="email" className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-cyan-400 focus:bg-white focus:ring-4 focus:ring-cyan-100" type="email" placeholder="voce@email.com" autoComplete="email" />
+                </div>
+
+                {accountMode === 'register' && (
+                  <div className="grid gap-2">
+                    <label className="text-sm font-black uppercase text-slate-700" htmlFor="phone">Telefone</label>
+                    <input id="phone" className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-cyan-400 focus:bg-white focus:ring-4 focus:ring-cyan-100" type="tel" placeholder="(00) 00000-0000" autoComplete="tel" />
+                  </div>
+                )}
+
+                <div className="grid gap-2">
+                  <label className="text-sm font-black uppercase text-slate-700" htmlFor="password">Senha</label>
+                  <input id="password" className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-cyan-400 focus:bg-white focus:ring-4 focus:ring-cyan-100" type="password" placeholder="Digite sua senha" autoComplete={accountMode === 'login' ? 'current-password' : 'new-password'} />
+                </div>
+
+                {accountMode === 'register' && (
+                  <label className="flex items-start gap-3 rounded-lg bg-cyan-50 p-4 text-sm text-slate-700">
+                    <input className="mt-1 size-4 accent-sky-700" type="checkbox" />
+                    Quero receber ofertas, novidades e cupons da Pulsepro por e-mail ou WhatsApp.
+                  </label>
+                )}
+
+                <button type="submit" className="button-shine mt-2 inline-flex w-full items-center justify-center gap-2 overflow-hidden rounded-full bg-blue-950 px-6 py-4 font-black uppercase text-white transition hover:bg-sky-800 focus:outline-none focus:ring-4 focus:ring-cyan-100">
+                  {accountMode === 'login' ? 'Entrar na conta' : 'Criar minha conta'}
+                  <ChevronRight className="size-5" aria-hidden="true" />
+                </button>
+              </form>
+
+              <div className="mt-5 flex flex-col gap-3 text-center text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
+                <button type="button" className="font-bold text-sky-700 hover:text-cyan-500">
+                  Esqueci minha senha
+                </button>
+                <button type="button" className="font-bold text-sky-700 hover:text-cyan-500" onClick={() => setAccountMode(accountMode === 'login' ? 'register' : 'login')}>
+                  {accountMode === 'login' ? 'Ainda nao tenho cadastro' : 'Ja tenho cadastro'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  )
+}
+
+export default App
