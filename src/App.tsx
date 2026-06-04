@@ -788,24 +788,48 @@ function App() {
           </div>
         </section>
 
-        <section className="bg-white px-4 py-16 sm:px-6 lg:px-8" id="produtos" aria-label="Carrossel de categorias">
+        <section className="bg-white px-4 py-14 sm:px-6 sm:py-16 lg:px-8" id="produtos" aria-label="Carrossel de categorias">
           <div className="mx-auto max-w-7xl">
             <div className="text-center">
               <span className="mx-auto block h-1 w-20 rounded-full bg-sky-600" />
               <h2 className="mt-6 text-3xl font-black text-slate-900 sm:text-4xl">Conheca nossos produtos</h2>
             </div>
 
-            <div className="relative mt-10">
+            <div className="mt-9 grid grid-cols-2 gap-4 lg:hidden">
+              {categoryCarouselItems.map((category, index) => (
+                <button
+                  type="button"
+                  key={category.label}
+                  className="mobile-card-motion mobile-tap-lift group grid min-h-48 justify-items-center rounded-[1.6rem] border border-cyan-100 bg-white p-3 text-center shadow-xl shadow-sky-950/5 transition active:scale-[0.98]"
+                  style={{ animationDelay: `${index * 0.08}s` }}
+                  onClick={() => openCategory(category.label)}
+                >
+                  <span className="mobile-category-pulse relative grid size-28 place-items-center rounded-full bg-gradient-to-br from-blue-950 to-cyan-400 p-2 shadow-xl shadow-sky-900/15">
+                    <img
+                      className="h-full w-full rounded-full object-contain drop-shadow-lg transition duration-500 group-active:scale-110"
+                      src={category.image}
+                      alt={`Categoria ${category.label}`}
+                    />
+                    <span className="absolute inset-0 rounded-full bg-gradient-to-t from-blue-950/10 to-transparent" />
+                  </span>
+                  <strong className="mt-3 grid min-h-10 max-w-32 place-items-center text-xs font-black uppercase leading-tight text-slate-900">
+                    {category.label}
+                  </strong>
+                </button>
+              ))}
+            </div>
+
+            <div className="relative mt-10 hidden lg:block">
               <button
                 type="button"
-                className="absolute left-0 top-1/2 z-10 hidden size-12 -translate-y-1/2 place-items-center rounded-full bg-white text-slate-500 shadow-xl transition hover:text-sky-700 active:scale-95 focus:outline-none focus:ring-4 focus:ring-cyan-100 md:grid"
+                className="absolute left-0 top-1/2 z-10 grid size-12 -translate-y-1/2 place-items-center rounded-full bg-white text-slate-500 shadow-xl transition hover:text-sky-700 active:scale-95 focus:outline-none focus:ring-4 focus:ring-cyan-100"
                 aria-label="Categoria anterior"
                 onClick={showPreviousCategory}
               >
                 <ChevronRight className="size-6 rotate-180" aria-hidden="true" />
               </button>
 
-              <div className="category-carousel-grid mx-auto grid max-w-6xl grid-cols-2 gap-6 md:grid-cols-4 md:gap-8">
+              <div className="category-carousel-grid mx-auto grid max-w-6xl grid-cols-4 gap-8">
                 {orderedCategories.map((category, index) => (
                   <button
                     type="button"
@@ -831,7 +855,7 @@ function App() {
 
               <button
                 type="button"
-                className="absolute right-0 top-1/2 z-10 hidden size-12 -translate-y-1/2 place-items-center rounded-full bg-white text-slate-500 shadow-xl transition hover:text-sky-700 active:scale-95 focus:outline-none focus:ring-4 focus:ring-cyan-100 md:grid"
+                className="absolute right-0 top-1/2 z-10 grid size-12 -translate-y-1/2 place-items-center rounded-full bg-white text-slate-500 shadow-xl transition hover:text-sky-700 active:scale-95 focus:outline-none focus:ring-4 focus:ring-cyan-100"
                 aria-label="Proxima categoria"
                 onClick={showNextCategory}
               >
@@ -839,7 +863,7 @@ function App() {
               </button>
             </div>
 
-            <div className="mt-8 flex justify-center gap-2" aria-label="Indicadores do carrossel de categorias">
+            <div className="mt-8 hidden justify-center gap-2 lg:flex" aria-label="Indicadores do carrossel de categorias">
               {categoryCarouselItems.map((category, index) => (
                 <button
                   key={category.label}
@@ -849,15 +873,6 @@ function App() {
                   onClick={() => setCategoryStartIndex(index)}
                 />
               ))}
-            </div>
-
-            <div className="mt-6 flex justify-center gap-3 md:hidden">
-              <button type="button" className="grid size-11 place-items-center rounded-full border border-slate-200 text-slate-600 shadow-sm active:scale-95" aria-label="Categoria anterior" onClick={showPreviousCategory}>
-                <ChevronRight className="size-5 rotate-180" aria-hidden="true" />
-              </button>
-              <button type="button" className="grid size-11 place-items-center rounded-full bg-blue-950 text-white shadow-sm active:scale-95" aria-label="Proxima categoria" onClick={showNextCategory}>
-                <ChevronRight className="size-5" aria-hidden="true" />
-              </button>
             </div>
           </div>
         </section>
