@@ -2,18 +2,16 @@ import { useEffect, useState } from 'react'
 import logoPulsepro from './assets/Logo-PulsePro.webp'
 import bannerWellness from './assets/banners/Captura de Tela 2026-05-30 às 14.25.08.png'
 import bannerPerformance from './assets/banners/Captura de Tela 2026-05-30 às 14.25.22.png'
-import cabeloPeleUnhaImg from './assets/produtos/beleza/Cabelo-Pele-e-Unha.webp'
-import cabeloPeleUnhaKit2Img from './assets/produtos/beleza/Cabelo-Pele-e-Unha-2.webp'
-import cabeloPeleUnhaKit3Img from './assets/produtos/beleza/Cabelo-Pele-e-Unha-3.webp'
-import belezaCategoriaImg from './assets/produtos/beleza/Pulsepro_Prancheta-2.webp'
-import brainFuelKitImg from './assets/produtos/performance_energia/brain-fuel/Brain-Fuel-2.webp'
-import creatinaGummyImg from './assets/produtos/performance_energia/creatina-gummy/Creatina-Gummy.webp'
-import creatinaGummyKitImg from './assets/produtos/performance_energia/creatina-gummy/Creatina-Gummy-3.webp'
-import creatinaPuraImg from './assets/produtos/performance_energia/creatina-pure/Creatina.webp'
-import pulsePowerImg from './assets/produtos/performance_energia/pulse-power/Pulse-Power.webp'
-import melatoninaImg from './assets/produtos/rotina_bem-estar/melatonina/Melatonina.webp'
-import pulseFlexImg from './assets/produtos/rotina_bem-estar/pulse-flex/Pulse-Flex.webp'
-import pulseFlexKitImg from './assets/produtos/rotina_bem-estar/pulse-flex/Pulse-Flex-2.webp'
+import {
+  categoryCarouselItems,
+  combos,
+  featuredProducts,
+  homeShowcaseProducts,
+  performanceProductOrder,
+  productCatalog,
+  routineProductOrder,
+} from './data/products'
+import type { Product } from './data/products'
 import {
   BadgeCheck,
   ChevronRight,
@@ -34,23 +32,6 @@ import {
   X,
 } from 'lucide-react'
 
-type Product = {
-  id: string
-  name: string
-  price: string
-  tag?: string
-  category?: string
-  description?: string
-  benefits?: string[]
-  oldPrice?: string
-  subtitle?: string
-  details?: string
-  ingredients?: string[]
-  usage?: string
-  gallery?: string[]
-  image: string
-}
-
 type CartItem = Product & {
   quantity: number
 }
@@ -63,171 +44,6 @@ function WhatsAppIcon({ className = 'size-6' }: { className?: string }) {
   )
 }
 
-const productCatalog: Product[] = [
-  {
-    id: 'creatina-gummy',
-    category: 'Sabor uva verde',
-    name: 'Creatina Gummy',
-    price: 'R$149,90',
-    tag: 'Performance',
-    subtitle: 'Creatina em gomas mastigaveis para uma rotina mais pratica.',
-    description: 'Mais praticidade para completar seus treinos com energia.',
-    details: 'Ideal para quem busca praticidade no consumo diario de creatina, com formato facil de carregar e encaixar na rotina.',
-    benefits: ['Mais força e desempenho físico', 'Prático e saboroso para rotina', 'Mais energia para a última série'],
-    ingredients: ['Creatina monohidratada', 'Sabor uva verde', 'Gomas mastigaveis'],
-    usage: 'Consuma conforme orientacao do rotulo ou indicacao profissional.',
-    image: creatinaGummyImg,
-  },
-  {
-    id: 'pulse-flex',
-    category: 'Dores articulares',
-    name: 'Pulse Flex',
-    price: 'R$89,90',
-    tag: 'Bem-estar',
-    subtitle: 'Suporte para mobilidade e conforto no dia a dia.',
-    description: 'Suporte diário para mobilidade, conforto e bem-estar.',
-    details: 'Pensado para pessoas que querem cuidar das articulacoes e manter uma rotina mais leve para se movimentar.',
-    benefits: ['Mais mobilidade no dia a dia', 'Ajuda no cuidado das articulações', 'Rotina mais leve para se movimentar'],
-    ingredients: ['Colageno tipo 2', 'Curcuma', 'Capsulas praticas'],
-    usage: 'Use diariamente conforme recomendacao do fabricante.',
-    image: pulseFlexImg,
-  },
-  {
-    id: 'pulse-power',
-    category: 'Pré-treino',
-    name: 'Pulse Power',
-    price: 'R$119,90',
-    tag: 'Performance',
-    subtitle: 'Pre-treino para foco, disposicao e intensidade.',
-    description: 'Foco e intensidade para treinos mais produtivos.',
-    details: 'Formula criada para quem precisa de mais energia e foco antes dos treinos, com comunicacao clara para venda online.',
-    benefits: ['Auxilia na performance física', 'Suporte para treinos intensos', 'Sabor marcante e refrescante'],
-    ingredients: ['Beta-alanina', 'Taurina', 'Creatina'],
-    usage: 'Consumir antes do treino conforme orientacao do rotulo.',
-    image: pulsePowerImg,
-  },
-  {
-    id: 'cabelo-pele-unha',
-    name: 'Cabelo, Pele e Unha',
-    price: 'R$89,90',
-    tag: 'Beleza',
-    category: 'Beleza',
-    subtitle: 'Cuidado diario para beleza de dentro para fora.',
-    description: 'Formula para fortalecer a rotina de cuidado com cabelo, pele e unhas.',
-    details: 'Produto indicado para destacar a linha de beleza da marca com foco em autocuidado e consistencia no uso.',
-    benefits: ['Ajuda na rotina de beleza', 'Suporte para cabelo, pele e unhas', 'Capsulas faceis de consumir'],
-    ingredients: ['Biotina', 'Selenio', 'Vitaminas selecionadas'],
-    usage: 'Consumir conforme recomendacao do rotulo.',
-    image: cabeloPeleUnhaImg,
-  },
-  {
-    id: 'cabelo-pele-unha-kit-2',
-    name: 'Cabelo, Pele e Unha (Kit com 2)',
-    price: 'R$149,90',
-    oldPrice: 'R$179,80',
-    tag: 'Beleza',
-    category: 'Beleza',
-    subtitle: 'Kit com 2 unidades para manter o autocuidado em dia.',
-    description: 'Combo de beleza com melhor custo-beneficio.',
-    details: 'Ideal para quem quer manter uma rotina constante de cuidados com cabelo, pele e unhas.',
-    benefits: ['Economia no kit', 'Rotina de beleza prolongada', 'Boa opcao para recompra'],
-    ingredients: ['Biotina', 'Selenio', 'Vitaminas selecionadas'],
-    usage: 'Consumir conforme recomendacao do rotulo.',
-    image: cabeloPeleUnhaKit2Img,
-  },
-  {
-    id: 'cabelo-pele-unha-kit-3',
-    name: 'Cabelo, Pele e Unha (Kit com 3)',
-    price: 'R$199,90',
-    oldPrice: 'R$269,70',
-    tag: 'Beleza',
-    category: 'Beleza',
-    subtitle: 'Kit com 3 unidades para uma rotina completa.',
-    description: 'Combo especial de beleza com mais economia.',
-    details: 'Pensado para aumentar o ticket medio e destacar a economia da compra em kit.',
-    benefits: ['Maior economia', 'Mais unidades para uso continuo', 'Cuidado de dentro para fora'],
-    ingredients: ['Biotina', 'Selenio', 'Vitaminas selecionadas'],
-    usage: 'Consumir conforme recomendacao do rotulo.',
-    image: cabeloPeleUnhaKit3Img,
-  },
-  {
-    id: 'melatonina',
-    name: 'Melatonina Mastigável',
-    price: 'R$59,90',
-    tag: 'Sono',
-    category: 'Rotina e bem-estar',
-    subtitle: 'Apoio para noites mais tranquilas.',
-    description: 'Melatonina mastigavel para apoiar a rotina de descanso.',
-    details: 'Uma tela pensada para vender bem-estar, com foco em rotina noturna, praticidade e informacoes simples.',
-    benefits: ['Auxilia a rotina do sono', 'Formato mastigavel', 'Pratico para usar antes de dormir'],
-    ingredients: ['Melatonina', 'Sabor maracuja', 'Comprimidos mastigaveis'],
-    usage: 'Consumir antes de dormir conforme orientacao do rotulo.',
-    image: melatoninaImg,
-  },
-  {
-    id: 'creatina-pura',
-    name: 'Creatina Pura',
-    price: 'R$99,90',
-    tag: 'Performance',
-    category: 'Performance e energia',
-    subtitle: 'Creatina monohidratada em po para performance diaria.',
-    description: 'Creatina pura para auxiliar forca, energia e desempenho fisico.',
-    details: 'Produto essencial para a linha performance, ideal para quem prefere creatina em po e busca um consumo simples no dia a dia.',
-    benefits: ['100% creatina monohidratada', 'Auxilia no desempenho fisico', 'Boa opcao para rotina de treino'],
-    ingredients: ['Creatina monohidratada', 'Formato em po', 'Uso diario'],
-    usage: 'Misture em agua ou bebida de preferencia conforme recomendacao do rotulo.',
-    image: creatinaPuraImg,
-  },
-  {
-    id: 'brain-fuel',
-    name: 'Brain Fuel - Foco e Concentração (Kit com 2)',
-    price: 'R$149,90',
-    oldPrice: 'R$179,80',
-    tag: 'Foco',
-    category: 'Performance e energia',
-    subtitle: 'Combo para concentracao e produtividade.',
-    description: 'Kit para apoiar foco, concentracao e rotina produtiva.',
-    details: 'Boa tela para apresentar combos e economia, reforcando o custo-beneficio da compra em kit.',
-    benefits: ['Ajuda na rotina de foco', 'Kit com melhor custo-beneficio', 'Ideal para estudo e trabalho'],
-    ingredients: ['Coenzima Q10', 'Tirosina', 'Colina'],
-    usage: 'Consumir conforme recomendacao do rotulo.',
-    image: brainFuelKitImg,
-  },
-  {
-    id: 'creatina-gummy-kit',
-    name: 'Creatina Gummy Kit com 3',
-    price: 'R$349,90',
-    oldPrice: 'R$449,70',
-    tag: 'Combo',
-    category: 'Performance e energia',
-    subtitle: 'Kit economico com 3 unidades de Creatina Gummy.',
-    description: 'Mais unidades para manter consistencia por mais tempo.',
-    details: 'Tela de combo ideal para aumentar ticket medio, destacando economia e recorrencia de uso.',
-    benefits: ['Economia no kit', 'Mais praticidade por mais tempo', 'Boa opcao para uso recorrente'],
-    ingredients: ['Creatina monohidratada', 'Gomas mastigaveis', 'Sabor uva verde'],
-    usage: 'Consuma conforme orientacao do rotulo.',
-    image: creatinaGummyKitImg,
-  },
-  {
-    id: 'pulse-flex-kit',
-    name: 'Pulse Flex Kit com 2',
-    price: 'R$149,90',
-    oldPrice: 'R$179,80',
-    tag: 'Combo',
-    category: 'Rotina e bem-estar',
-    subtitle: 'Kit com 2 unidades para cuidado continuo.',
-    description: 'Combo para manter a rotina de mobilidade e bem-estar.',
-    details: 'Produto para reforcar compra em kit com foco em cuidado prolongado e economia.',
-    benefits: ['Economia no combo', 'Suporte continuo para articulacoes', 'Mais praticidade para recompra'],
-    ingredients: ['Colageno tipo 2', 'Curcuma', 'Capsulas'],
-    usage: 'Use diariamente conforme recomendacao do fabricante.',
-    image: pulseFlexKitImg,
-  },
-]
-
-const featuredProducts = productCatalog.slice(0, 3)
-
-const combos = [productCatalog[8], productCatalog[9], productCatalog[10]]
 
 const testimonials = [
   {
@@ -270,12 +86,6 @@ const testimonials = [
 
 const loopingTestimonials = [...testimonials, ...testimonials]
 const benefitTicker = ['Creatina', 'Pre-treino', 'Colageno', 'Melatonina', 'Beleza', 'Mobilidade', 'Foco', 'Energia']
-const categoryCarouselItems = [
-  { label: 'Todos', image: creatinaGummyKitImg },
-  { label: 'Performance e energia', image: creatinaGummyImg },
-  { label: 'Rotina e bem-estar', image: pulseFlexImg },
-  { label: 'Beleza', image: belezaCategoriaImg },
-]
 const bannerSlides = [bannerPerformance, bannerWellness]
 const categorySlugs: Record<string, string> = {
   Todos: 'todos',
@@ -293,6 +103,11 @@ const navigationLinks = [
 
 const parsePrice = (price: string) => Number(price.replace('R$', '').replace(/\./g, '').replace(',', '.'))
 const formatCurrency = (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+const getProductOrder = (order: string[], id: string) => {
+  const index = order.indexOf(id)
+
+  return index === -1 ? order.length : index
+}
 
 function App() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -327,6 +142,14 @@ function App() {
     return product.category === activeCategory || product.tag === activeCategory
   })
   const sortedProducts = [...filteredProducts].sort((firstProduct, secondProduct) => {
+    if (sortOrder === 'padrao' && activeCategory === 'Rotina e bem-estar') {
+      return getProductOrder(routineProductOrder, firstProduct.id) - getProductOrder(routineProductOrder, secondProduct.id)
+    }
+
+    if (sortOrder === 'padrao' && activeCategory === 'Performance e energia') {
+      return getProductOrder(performanceProductOrder, firstProduct.id) - getProductOrder(performanceProductOrder, secondProduct.id)
+    }
+
     if (sortOrder === 'menor-preco') {
       return parsePrice(firstProduct.price) - parsePrice(secondProduct.price)
     }
@@ -732,7 +555,8 @@ function App() {
 
               <div className="mt-9 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {sortedProducts.map((product, index) => (
-                  <article key={product.id} className="mobile-card-motion mobile-tap-lift reveal-card group rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-cyan-200 hover:shadow-xl active:scale-[0.99]" style={{ animationDelay: `${index * 0.08}s` }}>
+                  <article key={product.id} className="mobile-card-motion mobile-tap-lift reveal-card group relative rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-cyan-200 hover:shadow-xl active:scale-[0.99]" style={{ animationDelay: `${index * 0.08}s` }}>
+                    {product.oldPrice && <span className="animate-offer absolute left-5 top-5 z-10 rounded-full bg-red-600 px-4 py-2 text-sm font-black text-white">Oferta!</span>}
                     <button type="button" className="mobile-tap-lift w-full text-left" onClick={() => openProduct(product)}>
                       <div className="flex h-56 items-center justify-center overflow-hidden rounded-md bg-gradient-to-b from-white to-cyan-50">
                         <img className="h-44 object-contain transition duration-500 group-hover:scale-[1.35] group-hover:-rotate-2" src={product.image} alt={`Produto ${product.name}`} />
@@ -872,6 +696,35 @@ function App() {
                   aria-label={`Mostrar ${category.label}`}
                   onClick={() => setCategoryStartIndex(index)}
                 />
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="bg-slate-50 px-4 py-14 sm:px-6 lg:px-8" aria-label="Vitrine de produtos">
+          <div className="mx-auto max-w-7xl">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <span className="block h-1 w-20 rounded-full bg-sky-600" />
+                <h2 className="mt-5 text-3xl font-black text-slate-900 sm:text-4xl">Produtos em destaque</h2>
+                <p className="mt-2 max-w-2xl text-slate-600">Fotos reais dos produtos Pulsepro para o cliente reconhecer as embalagens antes de comprar.</p>
+              </div>
+              <button type="button" className="w-fit rounded-full bg-blue-950 px-5 py-3 text-sm font-black uppercase text-white transition hover:bg-sky-800 active:scale-95 focus:outline-none focus:ring-4 focus:ring-cyan-100" onClick={() => openCategory('Todos')}>
+                Ver todos
+              </button>
+            </div>
+
+            <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+              {homeShowcaseProducts.map((product, index) => (
+                <article key={product.id} className="mobile-card-motion mobile-tap-lift group overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-xl" style={{ animationDelay: `${index * 0.06}s` }}>
+                  <button type="button" className="w-full text-left" onClick={() => openProduct(product)}>
+                    <div className="grid h-36 place-items-center overflow-hidden rounded-xl bg-gradient-to-b from-white to-cyan-50">
+                      <img className="h-28 object-contain drop-shadow-lg transition duration-500 group-hover:scale-125" src={product.image} alt={`Produto ${product.name}`} />
+                    </div>
+                    <h3 className="mt-4 min-h-10 text-sm font-black leading-tight text-slate-900">{product.name}</h3>
+                    <p className="mt-2 text-lg font-black text-slate-950">{product.price}</p>
+                  </button>
+                </article>
               ))}
             </div>
           </div>
