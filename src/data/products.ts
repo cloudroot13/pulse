@@ -34,6 +34,38 @@ export type Product = {
   gallery?: string[]
   image: string
 }
+export function generateSmartDescription(product: Product): string {
+  // Conservative description: only rephrases existing product fields.
+  const parts: string[] = []
+  if (product.subtitle) parts.push(product.subtitle)
+
+  if (product.benefits && product.benefits.length) {
+    parts.push(`Principais benefícios: ${product.benefits.join(', ')}.`)
+  }
+
+  if (product.ingredients && product.ingredients.length) {
+    parts.push(`Ingredientes: ${product.ingredients.join(', ')}.`)
+  }
+
+  if (product.usage) parts.push(`Como usar: ${product.usage}`)
+
+  if (product.description) parts.push(product.description)
+
+  // If nothing else, fall back to name and category
+  if (!parts.length) parts.push(`${product.name}${product.category ? ` — ${product.category}` : ''}`)
+
+  return parts.join(' ')
+}
+
+export function generateSmartShort(product: Product, maxChars = 140): string {
+  // Prefer subtitle or description, otherwise truncate the conservative full text.
+  if (product.subtitle && product.subtitle.length <= maxChars) return product.subtitle
+  if (product.description && product.description.length <= maxChars) return product.description
+
+  const full = generateSmartDescription(product)
+  if (full.length <= maxChars) return full
+  return full.slice(0, maxChars).replace(/\s+[^\s]*$/, '') + '...'
+}
 
 export const productCatalog: Product[] = [
   {
@@ -48,20 +80,27 @@ export const productCatalog: Product[] = [
     benefits: ['Mais força e desempenho físico', 'Prático e saboroso para rotina', 'Mais energia para a última série'],
     ingredients: ['Creatina monohidratada', 'Sabor uva verde', 'Gomas mastigaveis'],
     usage: 'Consuma conforme orientacao do rotulo ou indicacao profissional.',
-    image: creatinaGummyImg,
-  },
-  {
+    ingredients: ['Coenzima Q10', 'Tirosina', 'Colina'],
+    usage: '4 cápsulas por dia (conforme recomendação do rótulo).',
+    gallery: [brainFuelKit3Img, brainFuelKit2Img, brainFuelImg],
+    image: brainFuelImg,
     id: 'pulse-flex',
     category: 'Dores articulares',
     name: 'Pulse Flex',
     price: 'R$89,90',
     tag: 'Bem-estar',
     subtitle: 'Suporte para mobilidade e conforto no dia a dia.',
-    description: 'Suporte diário para mobilidade, conforto e bem-estar.',
+    description: `Fórmula desenvolvida para promover o cuidado integral das articulações, ajudando a reduzir inflamações, aliviar dores e melhorar a mobilidade. Com ingredientes que atuam diretamente na regeneração da cartilagem e no fortalecimento dos tecidos articulares, este suplemento oferece suporte para quem busca mais conforto, flexibilidade e qualidade de vida, especialmente em casos de desgaste natural ou sobrecarga.
+
+Benefícios:
+
+🛡️ Reduz inflamações e desconfortos nas articulações! 🤸 Alivia dores e promove maior flexibilidade! 🧩 Auxilia na regeneração da cartilagem! 🚶 Melhora a mobilidade e a qualidade de vida
+
+Um frasco contém 60 cápsulas. Sua recomendação diária é de 2 cápsulas por dia.`,
     details: 'Pensado para pessoas que querem cuidar das articulacoes e manter uma rotina mais leve para se movimentar.',
-    benefits: ['Mais mobilidade no dia a dia', 'Ajuda no cuidado das articulações', 'Rotina mais leve para se movimentar'],
+    benefits: ['Reduz inflamações e desconfortos nas articulações', 'Alivia dores e promove maior flexibilidade', 'Auxilia na regeneração da cartilagem', 'Melhora a mobilidade e a qualidade de vida'],
     ingredients: ['Colageno tipo 2', 'Curcuma', 'Capsulas praticas'],
-    usage: 'Use diariamente conforme recomendacao do fabricante.',
+    usage: 'Um frasco contém 60 cápsulas. Recomendação diária: 2 cápsulas por dia.',
     image: pulseFlexImg,
   },
   {
@@ -71,11 +110,15 @@ export const productCatalog: Product[] = [
     price: 'R$119,90',
     tag: 'Performance',
     subtitle: 'Pre-treino para foco, disposicao e intensidade.',
-    description: 'Foco e intensidade para treinos mais produtivos.',
+    description: `Suplemento pré-treino desenvolvido para quem busca mais energia, foco, força e desempenho máximo nos treinos. Sua fórmula combina aminoácidos, compostos energéticos e ingredientes que auxiliam na performance física, ajudando o corpo a suportar treinos mais intensos e produtivos.
+
+Com ativos como Creatina, Beta Alanina, L-Arginina e Taurina, esse pré-treino atua no fornecimento de energia rápida, melhora da resistência muscular e aumento da força, além de contribuir para uma melhor oxigenação dos músculos e atraso da fadiga. O resultado é mais explosão, disposição e rendimento do início ao fim do treino — tudo isso com um sabor agradável de maçã verde e kiwi ice, que torna a suplementação ainda mais prazerosa.
+
+Benefícios:`,
     details: 'Formula criada para quem precisa de mais energia e foco antes dos treinos, com comunicacao clara para venda online.',
-    benefits: ['Auxilia na performance física', 'Suporte para treinos intensos', 'Sabor marcante e refrescante'],
-    ingredients: ['Beta-alanina', 'Taurina', 'Creatina'],
-    usage: 'Consumir antes do treino conforme orientacao do rotulo.',
+    benefits: ['Aumenta a energia e a disposição para o treino', 'Contribui para força, potência e resistência muscular', 'Auxilia no atraso da fadiga e melhora do rendimento físico', 'Favorece foco e concentração durante os exercícios', 'Potencializa treinos de alta intensidade e explosão'],
+    ingredients: ['Creatina', 'Beta Alanina', 'L-Arginina', 'Taurina'],
+    usage: 'Conteúdo: 300g. Recomendação de uso: 15 g ao dia (1 scoop ou 1 colher de sopa). Modo de preparo: Diluir em 200 ml de água ou bebida de sua preferência.',
     image: pulsePowerImg,
   },
   {
@@ -85,11 +128,18 @@ export const productCatalog: Product[] = [
     tag: 'Beleza',
     category: 'Beleza',
     subtitle: 'Cuidado diario para beleza de dentro para fora.',
-    description: 'Formula para fortalecer a rotina de cuidado com cabelo, pele e unhas.',
+    description: `Fórmula especialmente desenvolvida para fortalecer os fios, melhorar a saúde das unhas e proporcionar uma pele mais hidratada, firme e luminosa. Com nutrientes essenciais que atuam de dentro para fora, promove o crescimento saudável do cabelo, aumenta a resistência das unhas e mantém a elasticidade e o viço da pele. Ideal para quem busca realçar a beleza natural com resultados visíveis e duradouros.
+
+Benefícios:
+
+💇 Fortalece e estimula o crescimento dos cabelos! 💅 Melhora a resistência e saúde das unhas! 💧 Hidrata e confere elasticidade à pele! ✨ Proporciona vitalidade e aparência saudável
+
+Um frasco contém 60 cápsulas. Sua recomendação diária é de 2 cápsulas por dia.`,
     details: 'Produto indicado para destacar a linha de beleza da marca com foco em autocuidado e consistencia no uso.',
-    benefits: ['Ajuda na rotina de beleza', 'Suporte para cabelo, pele e unhas', 'Capsulas faceis de consumir'],
+    benefits: ['Fortalece e estimula o crescimento dos cabelos', 'Melhora a resistência e saúde das unhas', 'Hidrata e confere elasticidade à pele', 'Proporciona vitalidade e aparência saudável'],
     ingredients: ['Biotina', 'Selenio', 'Vitaminas selecionadas'],
-    usage: 'Consumir conforme recomendacao do rotulo.',
+    usage: 'Um frasco contém 60 cápsulas. Recomendação diária: 2 cápsulas por dia.',
+    gallery: [cabeloPeleUnhaKit3Img, cabeloPeleUnhaKit2Img, cabeloPeleUnhaImg],
     image: cabeloPeleUnhaImg,
   },
   {
@@ -129,11 +179,20 @@ export const productCatalog: Product[] = [
     tag: 'Sono',
     category: 'Rotina e bem-estar',
     subtitle: 'Apoio para noites mais tranquilas.',
-    description: 'Melatonina mastigavel para apoiar a rotina de descanso.',
+    description: `Suplemento alimentar desenvolvido para quem busca melhorar a qualidade do sono de forma prática e natural. A melatonina é um hormônio produzido naturalmente pelo organismo, responsável por regular o ciclo do sono e vigília, ajudando o corpo a entender o momento certo de relaxar e descansar.
+
+A suplementação com melatonina auxilia na redução do tempo para pegar no sono, contribui para noites mais tranquilas e um descanso reparador. Em comprimidos mastigáveis com sabor agradável de maracujá, o consumo se torna simples e confortável, favorecendo uma rotina noturna mais equilibrada e um despertar com mais disposição.
+
+Benefícios:
+
+🌙 Auxilia na regulação do ciclo do sono! 😴 Contribui para pegar no sono mais rápido! 🛌 Favorece um sono mais profundo e reparador! ⚖️ Ajuda a equilibrar o ritmo biológico! 🌅 Promove mais disposição ao acordar
+
+Conteúdo: 60 comprimidos mastigáveis. Recomendação de uso: 1 comprimido ao dia. Sabor: Maracujá.`,
     details: 'Uma tela pensada para vender bem-estar, com foco em rotina noturna, praticidade e informacoes simples.',
-    benefits: ['Auxilia a rotina do sono', 'Formato mastigavel', 'Pratico para usar antes de dormir'],
+    benefits: ['Auxilia na regulação do ciclo do sono', 'Contribui para pegar no sono mais rápido', 'Favorece um sono mais profundo e reparador', 'Ajuda a equilibrar o ritmo biológico', 'Promove mais disposição ao acordar'],
     ingredients: ['Melatonina', 'Sabor maracuja', 'Comprimidos mastigaveis'],
-    usage: 'Consumir antes de dormir conforme orientacao do rotulo.',
+    usage: '1 comprimido ao dia (conforme recomendação do rótulo).',
+    gallery: [melatoninaKit3Img, melatoninaKit2Img, melatoninaImg],
     image: melatoninaImg,
   },
   {
@@ -173,11 +232,17 @@ export const productCatalog: Product[] = [
     tag: 'Foco',
     category: 'Performance e energia',
     subtitle: 'Suporte para foco, memoria e concentracao na rotina.',
-    description: 'Formula para apoiar clareza mental, foco e produtividade.',
+    description: `Combinando nutrientes que favorecem a atividade cerebral, este suplemento auxilia no aumento da atenção, da memória e da capacidade de raciocínio. Ideal para quem precisa de mais produtividade nos estudos, no trabalho ou em atividades que exigem alto desempenho mental, promove clareza, energia e equilíbrio para enfrentar os desafios do dia a dia.
+
+Benefícios:
+
+🧠 Melhora o foco e a capacidade de concentração; 🎯 Estimula a memória e o aprendizado; ✨ Favorece clareza e agilidade mental; 🌿 Proporciona mais energia e desempenho intelectual.
+
+Um frasco contém 120 cápsulas. Sua recomendação diária é de 4 cápsulas por dia.`,
     details: 'Produto da linha performance indicado para quem quer reforcar foco em estudos, trabalho e rotina intensa.',
-    benefits: ['Melhora o foco e a concentracao', 'Estimula memoria e aprendizado', 'Favorece clareza mental'],
+    benefits: ['Melhora o foco e a capacidade de concentração', 'Estimula a memória e o aprendizado', 'Favorece clareza e agilidade mental', 'Proporciona mais energia e desempenho intelectual'],
     ingredients: ['Coenzima Q10', 'Tirosina', 'Colina'],
-    usage: 'Consumir conforme recomendacao do rotulo.',
+    usage: '4 cápsulas por dia (conforme recomendação do rótulo).',
     image: brainFuelImg,
   },
   {
@@ -231,12 +296,16 @@ export const productCatalog: Product[] = [
     price: 'R$349,90',
     oldPrice: 'R$449,70',
     tag: 'Combo',
-    category: 'Performance e energia',
-    subtitle: 'Kit economico com 3 unidades de Creatina Gummy.',
-    description: 'Mais unidades para manter consistencia por mais tempo.',
-    details: 'Tela de combo ideal para aumentar ticket medio, destacando economia e recorrencia de uso.',
-    benefits: ['Economia no kit', 'Mais praticidade por mais tempo', 'Boa opcao para uso recorrente'],
-    ingredients: ['Creatina monohidratada', 'Gomas mastigaveis', 'Sabor uva verde'],
+    subtitle: 'Creatina em gomas mastigaveis para uma rotina mais pratica.',
+    description: `Suplemento alimentar desenvolvido para quem busca mais força, energia e desempenho físico, agora em uma forma prática e saborosa. A creatina é um dos suplementos mais estudados e utilizados no mundo esportivo, reconhecida por seu papel no fornecimento de energia rápida para os músculos durante exercícios de alta intensidade.
+
+A versão em gomas mastigáveis sabor uva verde facilita a suplementação diária, sem necessidade de preparo ou diluição. A creatina monohidratada auxilia no aumento da força muscular, melhora da performance nos treinos e apoio à recuperação muscular, tornando-se uma excelente aliada para quem deseja evoluir nos resultados com mais praticidade.
+
+Benefícios:`,
+    details: 'Ideal para quem busca praticidade no consumo diario de creatina, com formato facil de carregar e encaixar na rotina.',
+    benefits: ['Auxilia no aumento da força e da potência muscular', 'Contribui para mais energia em treinos intensos', 'Melhora o desempenho físico e a capacidade de treino', 'Apoia a recuperação muscular pós-exercício', 'Forma prática e saborosa de suplementação'],
+    ingredients: ['Creatina monohidratada', 'Sabor uva verde', 'Gomas mastigaveis'],
+    usage: 'Recomendação de uso: 2 gomas ao dia. Conteúdo: 60 gomas mastigáveis. Sabor: Uva verde.',
     usage: 'Consuma conforme orientacao do rotulo.',
     image: creatinaGummyKit3Img,
   },
@@ -247,11 +316,14 @@ export const productCatalog: Product[] = [
     tag: 'Performance',
     category: 'Performance e energia',
     subtitle: 'Creatina monohidratada em po para performance diaria.',
-    description: 'Creatina pura para auxiliar forca, energia e desempenho fisico.',
+    description: `Suplemento essencial para quem busca aumento de força, resistência e melhora no desempenho físico. A creatina é uma substância natural presente nos músculos, responsável por fornecer energia rápida durante atividades intensas e de curta duração, como treinos de força e explosão. Sua suplementação contribui para a recuperação muscular, aumento da massa magra e maior capacidade para treinos intensos, auxiliando na conquista dos seus objetivos com mais eficiência.
+
+Benefícios:`,
     details: 'Produto essencial para a linha performance, ideal para quem prefere creatina em po e busca um consumo simples no dia a dia.',
-    benefits: ['100% creatina monohidratada', 'Auxilia no desempenho fisico', 'Boa opcao para rotina de treino'],
+    benefits: ['Aumenta a força e a resistência muscular', 'Melhora o desempenho em treinos de alta intensidade', 'Auxilia na recuperação muscular pós-exercício', 'Contribui para o ganho de massa magra'],
     ingredients: ['Creatina monohidratada', 'Formato em po', 'Uso diario'],
-    usage: 'Misture em agua ou bebida de preferencia conforme recomendacao do rotulo.',
+    usage: 'Um frasco contém 200 gramas de creatina em pó. Recomendação diária: 5 gramas por dia.',
+    gallery: [creatinaPuraKit2Img, creatinaPuraImg],
     image: creatinaPuraImg,
   },
   {
@@ -301,6 +373,21 @@ export const productCatalog: Product[] = [
   },
 ]
 
+// Post-process kits: inherit main product fields when missing to keep descriptions consistent
+productCatalog.forEach((prod) => {
+  if (prod.id.includes('-kit')) {
+    const baseId = prod.id.split('-kit')[0]
+    const base = productCatalog.find((p) => p.id === baseId)
+    if (base) {
+      prod.description = prod.description || base.description
+      prod.details = prod.details || base.details
+      prod.benefits = prod.benefits || base.benefits
+      prod.ingredients = prod.ingredients || base.ingredients
+      prod.usage = prod.usage || base.usage
+    }
+  }
+})
+
 export const categoryCarouselItems = [
   { label: 'Todos', image: creatinaGummyKit3Img },
   { label: 'Performance e energia', image: creatinaGummyImg },
@@ -316,9 +403,8 @@ export const homeShowcaseProducts = homeShowcaseIds
   .map((id) => productCatalog.find((product) => product.id === id))
   .filter((product): product is Product => Boolean(product))
 
-const comboIds = ['brain-fuel-kit-2', 'creatina-gummy-kit', 'pulse-flex-kit']
-
-export const combos = comboIds.map((id) => productCatalog.find((product) => product.id === id)).filter((product): product is Product => Boolean(product))
+// Derive combos dynamically: any product that is a kit (id includes '-kit') or tagged as 'Combo'
+export const combos = productCatalog.filter((product) => product.id.includes('-kit') || product.tag === 'Combo')
 
 export const routineProductOrder = ['melatonina', 'melatonina-kit-2', 'melatonina-kit-3', 'pulse-flex', 'pulse-flex-kit', 'pulse-flex-kit-3']
 
@@ -333,3 +419,29 @@ export const performanceProductOrder = [
   'creatina-pura-kit-2',
   'pulse-power',
 ]
+
+// Apply local admin overrides from localStorage (frontend-only admin edits)
+try {
+  if (typeof window !== 'undefined') {
+    const raw = window.localStorage.getItem('admin_products')
+    if (raw) {
+      const overrides = JSON.parse(raw)
+      Object.keys(overrides).forEach((id) => {
+        const o = overrides[id]
+        const idx = productCatalog.findIndex((p) => p.id === id)
+        if (o && o.__deleted) {
+          if (idx !== -1) productCatalog.splice(idx, 1)
+          return
+        }
+        if (idx !== -1) {
+          productCatalog[idx] = { ...productCatalog[idx], ...o }
+        } else {
+          // add new product created from admin
+          productCatalog.push({ id, ...(o as any) })
+        }
+      })
+    }
+  }
+} catch (e) {
+  // ignore
+}

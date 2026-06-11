@@ -1,8 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
+import CheckoutPage from './Checkout'
 import logoPulsepro from './assets/Logo-PulsePro.webp'
 import bannerWellness from './assets/banners/Captura de Tela 2026-05-30 às 14.25.08.png'
 import bannerPerformance from './assets/banners/Captura de Tela 2026-05-30 às 14.25.22.png'
+import bannerMobile from './assets/banners/banner_v2.jpeg'
 import octogonoBackground from './assets/banners/octogono.png'
+import belezaKitImg from './assets/produtos/beleza/Pulsepro_Prancheta-2.webp'
+import pagamentosIcon from './assets/icons/pagamentos.webp'
+import siteblindadoIcon from './assets/icons/siteblindado.png'
 import {
   categoryCarouselItems,
   combos,
@@ -33,6 +38,9 @@ import {
   UserRound,
   X,
 } from 'lucide-react'
+import { generateSmartDescription, generateSmartShort } from './data/products'
+import Admin from './admin/Admin'
+import { recordVisit, recordProductView } from './utils/analytics'
 
 type CartItem = Product & {
   quantity: number
@@ -46,13 +54,7 @@ function WhatsAppIcon({ className = 'size-6' }: { className?: string }) {
   )
 }
 
-function InstagramIcon({ className = 'size-6' }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5zm5 6.2A3.8 3.8 0 1 0 15.8 12 3.8 3.8 0 0 0 12 8.2zm4.6-.9a1.1 1.1 0 1 0 1.1 1.1 1.1 1.1 0 0 0-1.1-1.1zM12 9.6A2.4 2.4 0 1 1 9.6 12 2.4 2.4 0 0 1 12 9.6z" />
-    </svg>
-  )
-}
+
 
 
 const testimonials = [
@@ -104,11 +106,11 @@ const categorySlugs: Record<string, string> = {
   Beleza: 'beleza',
 }
 const navigationLinks = [
-  { label: 'Inicio', href: '#' },
-  { label: 'Produtos', href: '#produtos' },
-  { label: 'Combos', href: '#combos' },
-  { label: 'Sobre', href: '#sobre' },
-  { label: 'Contato', href: '#contato' },
+  { label: 'Inicio', href: '/' },
+  { label: 'Produtos', href: '/produtos' },
+  { label: 'Combos', href: '/combos' },
+  { label: 'Sobre', href: '/sobre' },
+  { label: 'Contato', href: '/contato' },
 ]
 
 const parsePrice = (price: string) => Number(price.replace('R$', '').replace(/\./g, '').replace(',', '.'))
@@ -130,8 +132,19 @@ function App() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [categoryPage, setCategoryPage] = useState<string | null>(null)
   const [staticPage, setStaticPage] = useState<'sobre' | 'contato' | null>(null)
+  const [combosPage, setCombosPage] = useState<boolean>(false)
   const [activeCategory, setActiveCategory] = useState('Todos')
   const [bannerIndex, setBannerIndex] = useState(0)
+  const [mobileBannerIndex, setMobileBannerIndex] = useState(0)
+  const mobileBannerSlides = [bannerMobile, bannerWellness]
+  const touchStartX = useRef<number | null>(null)
+
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false)
+  const [routeHash, setRouteHash] = useState<string>(window.location.hash || '')
+  const [shippingMethod, setShippingMethod] = useState<'standard' | 'express'>('standard')
+  const [shippingAddress, setShippingAddress] = useState({ name: '', street: '', city: '', state: '', zip: '', phone: '' })
+  const [paymentMethod, setPaymentMethod] = useState<'card' | 'boleto' | 'pix'>('card')
+  const [orderPlaced, setOrderPlaced] = useState<{ id: string; total: number } | null>(null)
   const [sortOrder, setSortOrder] = useState('padrao')
 
   const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0)
@@ -209,8 +222,30 @@ function App() {
     setSelectedProduct(null)
     setCategoryPage(null)
     setStaticPage(null)
+    setCombosPage(false)
     setIsMenuOpen(false)
     window.history.pushState(null, '', '/')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const navigateToProductsPage = () => {
+    setSelectedProduct(null)
+    setCategoryPage('Todos')
+    setStaticPage(null)
+    setCombosPage(false)
+    setIsMenuOpen(false)
+    setActiveCategory('Todos')
+    window.history.pushState(null, '', '/produtos')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const navigateToCombosPage = () => {
+    setSelectedProduct(null)
+    setCategoryPage(null)
+    setStaticPage(null)
+    setCombosPage(true)
+    setIsMenuOpen(false)
+    window.history.pushState(null, '', '/combos')
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
@@ -219,7 +254,13 @@ function App() {
     setCategoryPage(null)
     setStaticPage(null)
     setIsMenuOpen(false)
-    window.history.pushState(null, '', sectionId ? `/#${sectionId}` : '/')
+    // Use hash navigation to ensure scrolling works from any route (including checkout)
+    if (sectionId) {
+      window.location.hash = sectionId
+    } else {
+      window.location.hash = ''
+      window.history.pushState(null, '', '/')
+    }
 
     window.setTimeout(() => {
       if (!sectionId) {
@@ -228,7 +269,7 @@ function App() {
       }
 
       document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    }, 0)
+    }, 50)
   }
 
   const openProduct = (product: Product) => {
@@ -239,6 +280,7 @@ function App() {
     setIsMenuOpen(false)
     window.history.pushState(null, '', `/produto/${product.id}`)
     window.scrollTo({ top: 0, behavior: 'smooth' })
+    try { recordProductView(product.id) } catch (e) {}
   }
 
   const closeProduct = () => {
@@ -265,6 +307,11 @@ function App() {
   }
 
   useEffect(() => {
+    const onHash = () => setRouteHash(window.location.hash || '')
+    window.addEventListener('hashchange', onHash)
+    return () => window.removeEventListener('hashchange', onHash)
+  }, [])
+  useEffect(() => {
     const intervalId = window.setInterval(() => {
       setCategoryStartIndex((index) => (index + 1) % categoryCarouselItems.length)
     }, 4200)
@@ -281,6 +328,14 @@ function App() {
   }, [])
 
   useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setMobileBannerIndex((index) => (index + 1) % mobileBannerSlides.length)
+    }, 5200)
+
+    return () => window.clearInterval(intervalId)
+  }, [])
+
+  useEffect(() => {
     const syncRoute = () => {
       const [, routeType, routeSlug] = window.location.pathname.split('/')
 
@@ -289,6 +344,23 @@ function App() {
         setSelectedProduct(product ?? null)
         setCategoryPage(null)
         setStaticPage(null)
+        setCombosPage(false)
+        return
+      }
+
+      if (routeType === 'produtos') {
+        setSelectedProduct(null)
+        setCategoryPage('Todos')
+        setStaticPage(null)
+        setCombosPage(false)
+        return
+      }
+
+      if (routeType === 'combos') {
+        setSelectedProduct(null)
+        setCategoryPage(null)
+        setStaticPage(null)
+        setCombosPage(true)
         return
       }
 
@@ -298,6 +370,7 @@ function App() {
         setCategoryPage(category)
         setSelectedProduct(null)
         setStaticPage(null)
+        setCombosPage(false)
         return
       }
 
@@ -305,15 +378,19 @@ function App() {
         setStaticPage(routeType)
         setSelectedProduct(null)
         setCategoryPage(null)
+        setCombosPage(false)
         return
       }
 
       setSelectedProduct(null)
       setCategoryPage(null)
       setStaticPage(null)
+      setCombosPage(false)
     }
 
     syncRoute()
+    // record visit for analytics on every route sync
+    try { recordVisit() } catch (e) {}
     window.addEventListener('popstate', syncRoute)
 
     return () => window.removeEventListener('popstate', syncRoute)
@@ -330,6 +407,8 @@ function App() {
 
     return () => window.removeEventListener('keydown', closeZoomOnEscape)
   }, [])
+
+  // Always render the app shell (header) and include Checkout inside main
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-white text-slate-950">
@@ -364,11 +443,23 @@ function App() {
                 href={link.href}
                 onClick={(event) => {
                   event.preventDefault()
-                  if (link.href === '#sobre' || link.href === '#contato') {
-                    openStaticPage(link.href.replace('#', '') as 'sobre' | 'contato')
-                    return
-                  }
-                  navigateToHomeSection(link.href === '#' ? undefined : link.href.replace('#', ''))
+                    if (link.href === '/sobre' || link.href === '/contato') {
+                      openStaticPage(link.href.replace('/', '') as 'sobre' | 'contato')
+                      return
+                    }
+
+                    if (link.href === '/produtos') {
+                      navigateToProductsPage()
+                      return
+                    }
+
+                    if (link.href === '/combos') {
+                      navigateToCombosPage()
+                      return
+                    }
+
+                    // Default: go to home
+                    navigateHome()
                 }}
               >
                 {link.label}
@@ -423,11 +514,22 @@ function App() {
               href={link.href}
               onClick={(event) => {
                 event.preventDefault()
-                if (link.href === '#sobre' || link.href === '#contato') {
-                  openStaticPage(link.href.replace('#', '') as 'sobre' | 'contato')
+                if (link.href === '/sobre' || link.href === '/contato') {
+                  openStaticPage(link.href.replace('/', '') as 'sobre' | 'contato')
                   return
                 }
-                navigateToHomeSection(link.href === '#' ? undefined : link.href.replace('#', ''))
+
+                if (link.href === '/produtos') {
+                  navigateToProductsPage()
+                  return
+                }
+
+                if (link.href === '/combos') {
+                  navigateToCombosPage()
+                  return
+                }
+
+                navigateHome()
               }}
             >
               {link.label}
@@ -436,7 +538,15 @@ function App() {
         </nav>
       </header>
 
-      {selectedProduct ? (
+      {window.location.pathname.startsWith('/admin-3f2b9a') ? (
+        <main>
+          <Admin />
+        </main>
+      ) : routeHash === '#/checkout' ? (
+        <main>
+          <CheckoutPage />
+        </main>
+      ) : selectedProduct ? (
         <main>
           <section className="bg-white px-4 py-10 sm:px-6 lg:px-8">
             <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-start">
@@ -452,7 +562,7 @@ function App() {
                     Clique para ampliar
                   </span>
                   <div className="absolute inset-6 rounded-full bg-cyan-100/60 opacity-0 blur-3xl transition duration-500 group-hover:opacity-100" />
-                  <img className="mobile-product-drift relative z-10 max-h-[440px] w-full object-contain drop-shadow-xl transition duration-700 group-hover:scale-150 sm:max-h-[520px]" src={selectedProduct.image} alt={`Embalagem ${selectedProduct.name}`} />
+                  <img className="mobile-product-drift relative z-10 max-h-[440px] w-full object-contain drop-shadow-xl transition duration-700 group-hover:scale-150 sm:max-h-[520px]" src={selectedProduct.gallery?.[0] ?? selectedProduct.image} alt={`Embalagem ${selectedProduct.name}`} />
                 </button>
 
                 <button type="button" className="mobile-tap-lift group w-28 overflow-hidden rounded-md border border-slate-200 bg-white p-2 shadow-sm transition hover:border-cyan-300 focus:outline-none focus:ring-4 focus:ring-cyan-100" aria-label={`Abrir zoom de ${selectedProduct.name}`} onClick={() => setIsImageZoomOpen(true)}>
@@ -490,37 +600,26 @@ function App() {
                   </button>
                 </div>
 
-                <div className="mt-10 rounded-lg border border-slate-200 bg-slate-50 p-6">
+                <div className="mt-10 rounded-lg border border-slate-200 bg-slate-50 p-6 animate-fade-up">
                   <h2 className="text-xl font-black uppercase text-slate-950">Sobre o produto</h2>
-                  <p className="mt-3 leading-7 text-slate-700">{selectedProduct.details ?? selectedProduct.description}</p>
+                  <p className="mt-3 leading-7 text-slate-700">{selectedProduct.description ?? selectedProduct.details ?? generateSmartDescription(selectedProduct)}</p>
                 </div>
               </div>
             </div>
           </section>
 
           <section className="px-4 py-12 sm:px-6 lg:px-8">
-            <div className="mx-auto grid max-w-7xl gap-5 md:grid-cols-3">
-                <div className="rounded-lg border border-slate-200 bg-slate-50 p-6">
-                  <h2 className="text-xl font-black uppercase text-slate-950">Ingredientes em destaque</h2>
-                  <ul className="mt-4 grid gap-3">
-                    {(selectedProduct.ingredients ?? []).map((ingredient) => (
-                      <li key={ingredient} className="flex items-center gap-3 text-slate-700">
-                        <Sparkles className="size-5 shrink-0 text-cyan-500" aria-hidden="true" />
-                        <span>{ingredient}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-                  <h2 className="text-xl font-black uppercase text-slate-950">Como usar</h2>
-                  <p className="mt-3 leading-7 text-slate-700">{selectedProduct.usage}</p>
-                </div>
-                <div className="rounded-lg bg-gradient-to-br from-blue-950 to-cyan-500 p-6 text-white">
-                  <ShieldCheck className="size-9" aria-hidden="true" />
-                  <h2 className="mt-4 text-xl font-black uppercase">Compra segura</h2>
-                  <p className="mt-2 text-cyan-50">Checkout preparado para integrar pagamento, frete e cadastro do cliente.</p>
-                </div>
-            </div>
+            <div className="mx-auto grid max-w-7xl gap-5 md:grid-cols-2">
+                  <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+                    <h2 className="text-xl font-black uppercase text-slate-950">Como usar</h2>
+                    <p className="mt-3 leading-7 text-slate-700">{selectedProduct.usage}</p>
+                  </div>
+                  <div className="rounded-lg bg-gradient-to-br from-blue-950 to-cyan-500 p-6 text-white">
+                    <ShieldCheck className="size-9" aria-hidden="true" />
+                    <h2 className="mt-4 text-xl font-black uppercase">Compra segura</h2>
+                    <p className="mt-2 text-cyan-50">Checkout preparado para integrar pagamento, frete e cadastro do cliente.</p>
+                  </div>
+              </div>
           </section>
 
           <section className="bg-slate-50 px-4 py-14 sm:px-6 lg:px-8">
@@ -549,6 +648,42 @@ function App() {
                     </article>
                   ))}
               </div>
+            </div>
+          </section>
+        </main>
+      ) : combosPage ? (
+        <main>
+          <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+            <div className="text-center">
+              <span className="mx-auto block h-1 w-20 rounded-full bg-sky-600" />
+              <h2 className="mt-6 text-3xl font-black text-slate-900 sm:text-4xl">Aproveite nossos combos e economize</h2>
+            </div>
+            <div className="mt-10 grid gap-5 md:grid-cols-3">
+              {combos.map((combo, index) => (
+                <article key={combo.name} className="mobile-card-motion mobile-tap-lift reveal-card group relative rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-cyan-200 hover:shadow-xl active:scale-[0.99]" style={{ animationDelay: `${index * 0.1}s` }}>
+                  <span className="animate-offer absolute left-6 top-6 rounded-full bg-red-600 px-4 py-2 text-sm font-black text-white">Oferta!</span>
+                  <button type="button" className="mobile-tap-lift w-full text-left" onClick={() => openProduct(combo)}>
+                      <div className="flex h-56 items-center justify-center overflow-hidden rounded-md">
+                        <img className="h-44 object-contain drop-shadow-xl transition duration-500 group-hover:scale-[1.35] group-hover:-rotate-3" src={combo.image} alt={`Combo ${combo.name}`} />
+                      </div>
+                  <h3 className="mt-5 min-h-14 text-xl font-bold text-slate-900">{combo.name}</h3>
+                  <p className="mt-3 text-xl">
+                    <span className="mr-2 text-red-500 line-through">{combo.oldPrice}</span>
+                    <span className="font-black text-slate-900">{combo.price}</span>
+                  </p>
+                  </button>
+                  <button type="button" className="mobile-tap-lift mt-4 text-sm font-black uppercase text-sky-700 underline-offset-4 hover:underline" onClick={() => openProduct(combo)}>
+                    Ver detalhes
+                  </button>
+                  <button
+                    type="button"
+                    className="button-shine mobile-tap-lift mt-6 overflow-hidden rounded-full bg-slate-200 px-5 py-3 text-sm font-black uppercase text-slate-700 transition hover:bg-cyan-300 hover:text-blue-950 active:scale-[0.98] focus:outline-none focus:ring-4 focus:ring-cyan-100"
+                    onClick={() => addToCart(combo)}
+                  >
+                    Adicionar ao carrinho
+                  </button>
+                </article>
+              ))}
             </div>
           </section>
         </main>
@@ -626,6 +761,10 @@ function App() {
             </div>
           </section>
         </main>
+      ) : routeHash === '#/checkout' ? (
+        <main>
+          <CheckoutPage />
+        </main>
       ) : staticPage === 'sobre' ? (
         <main>
           <section
@@ -636,14 +775,7 @@ function App() {
               <div className="relative grid justify-items-center">
                 <img className="h-28 w-auto object-contain sm:h-40" src={logoPulsepro} alt="Pulsepro" />
                 <div className="relative mt-8 flex items-end justify-center">
-                  {featuredProducts.slice(0, 3).map((product, index) => (
-                    <img
-                      key={product.id}
-                      className={`${index === 1 ? 'z-10 h-56 sm:h-72' : 'h-48 opacity-95 sm:h-60'} ${index === 0 ? '-mr-16' : index === 2 ? '-ml-16' : ''} object-contain drop-shadow-2xl`}
-                      src={product.image}
-                      alt={`Produto ${product.name}`}
-                    />
-                  ))}
+                  <img className="h-72 object-contain drop-shadow-2xl" src={belezaKitImg} alt="Kit Pulsepro" />
                 </div>
               </div>
 
@@ -690,16 +822,27 @@ function App() {
                     duartenumeroum@gmail.com
                   </a>
                 </div>
-                <div className="mt-6 flex gap-3">
-                  <a className="grid size-11 place-items-center rounded-full bg-green-600 text-white transition hover:-translate-y-1" href="https://wa.me/5561998386625" aria-label="WhatsApp">
-                    <WhatsAppIcon className="size-6" />
-                  </a>
-                  <a className="grid size-11 place-items-center rounded-full bg-fuchsia-600 text-white transition hover:-translate-y-1" href="https://instagram.com" aria-label="Instagram">
-                    <InstagramIcon className="size-6" aria-hidden="true" />
-                  </a>
-                  <a className="grid size-11 place-items-center rounded-full bg-slate-900 text-white transition hover:-translate-y-1" href="https://tiktok.com" aria-label="TikTok">
-                    <span className="text-lg font-black">♪</span>
-                  </a>
+                <div className="mt-6">
+                  <div className="elementor-social-icons-wrapper" role="list">
+                    <span className="elementor-grid-item" role="listitem">
+                      <a className="elementor-icon elementor-social-icon elementor-social-icon-whatsapp" href="https://api.whatsapp.com/send/?phone=556198386625&text&type=phone_number&app_absent=0" target="_blank" rel="noopener">
+                        <span className="elementor-screen-only">Whatsapp</span>
+                        <i aria-hidden="true" className="fab fa-whatsapp" />
+                      </a>
+                    </span>
+                    <span className="elementor-grid-item" role="listitem">
+                      <a className="elementor-icon elementor-social-icon elementor-social-icon-instagram" href="https://www.instagram.com/pulsepro.online" target="_blank" rel="noopener">
+                        <span className="elementor-screen-only">Instagram</span>
+                        <i aria-hidden="true" className="fab fa-instagram" />
+                      </a>
+                    </span>
+                    <span className="elementor-grid-item" role="listitem">
+                      <a className="elementor-icon elementor-social-icon elementor-social-icon-tiktok" href="https://www.tiktok.com/@pulsepro.online" target="_blank" rel="noopener">
+                        <span className="elementor-screen-only">Tiktok</span>
+                        <i aria-hidden="true" className="fab fa-tiktok" />
+                      </a>
+                    </span>
+                  </div>
                 </div>
               </aside>
             </div>
@@ -708,7 +851,35 @@ function App() {
       ) : (
       <main>
         <section className="relative bg-slate-950 lg:overflow-hidden" aria-label="Banners Pulsepro">
-          <img className="mobile-banner-kenburns w-full object-contain object-center lg:aspect-[1440/599]" src={bannerSlides[bannerIndex]} alt="Banner promocional Pulsepro" />
+          {/* Desktop banner (carousel) */}
+          <img className="hidden lg:block w-full object-contain lg:aspect-[1440/599]" src={bannerSlides[bannerIndex]} alt="Banner promocional Pulsepro" />
+          {/* Mobile banner - use alternative image to improve visibility on small screens */}
+          <div
+            className="block lg:hidden w-full overflow-hidden"
+            onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX }}
+            onTouchEnd={(e) => {
+              const endX = e.changedTouches?.[0]?.clientX ?? null
+              if (touchStartX.current !== null && endX !== null) {
+                const delta = touchStartX.current - endX
+                if (delta > 50) setMobileBannerIndex((i) => (i + 1) % mobileBannerSlides.length)
+                if (delta < -50) setMobileBannerIndex((i) => (i - 1 + mobileBannerSlides.length) % mobileBannerSlides.length)
+              }
+              touchStartX.current = null
+            }}
+          >
+            <img className="w-full object-contain mobile-banner-kenburns" src={mobileBannerSlides[mobileBannerIndex]} alt="Banner promocional Pulsepro mobile" />
+            <div className="absolute bottom-6 left-1/2 flex -translate-x-1/2 gap-2 lg:hidden">
+              {mobileBannerSlides.map((_, index) => (
+                <button
+                  key={index}
+                  type="button"
+                  className={`${mobileBannerIndex === index ? 'w-8 bg-cyan-300' : 'w-2 bg-white/50'} h-2 rounded-full transition-all focus:outline-none focus:ring-4 focus:ring-cyan-100`}
+                  aria-label={`Mostrar banner ${index + 1}`}
+                  onClick={() => setMobileBannerIndex(index)}
+                />
+              ))}
+            </div>
+          </div>
           <div className="absolute bottom-6 left-1/2 flex -translate-x-1/2 gap-2">
             {bannerSlides.map((_, index) => (
               <button
@@ -888,7 +1059,7 @@ function App() {
                 </div>
                 <p className="mt-3 text-sm font-bold uppercase tracking-[0.16em] text-cyan-200">{product.category}</p>
                 <h3 className="mt-3 text-3xl font-black uppercase">{product.name}</h3>
-                <p className="mt-3 text-cyan-50">{product.description}</p>
+                <p className="mt-3 text-cyan-50">{generateSmartShort(product)}</p>
                 <ul className="mt-5 grid gap-3">
                   {(product.benefits ?? []).map((benefit) => (
                     <li key={benefit} className="flex gap-3 text-lg font-bold">
@@ -924,10 +1095,9 @@ function App() {
               <article key={combo.name} className="mobile-card-motion mobile-tap-lift reveal-card group relative rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-cyan-200 hover:shadow-xl active:scale-[0.99]" style={{ animationDelay: `${index * 0.1}s` }}>
                 <span className="animate-offer absolute left-6 top-6 rounded-full bg-red-600 px-4 py-2 text-sm font-black text-white">Oferta!</span>
                 <button type="button" className="mobile-tap-lift w-full text-left" onClick={() => openProduct(combo)}>
-                <div className="flex h-56 items-center justify-center overflow-hidden rounded-md">
-                  <img className="h-44 object-contain drop-shadow-xl transition duration-500 group-hover:scale-[1.35] group-hover:-rotate-3" src={combo.image} alt={`Combo ${combo.name}`} />
-                  <img className="-ml-16 h-40 object-contain drop-shadow-xl transition duration-500 group-hover:scale-[1.35] group-hover:rotate-3" src={combo.image} alt="" aria-hidden="true" />
-                </div>
+                    <div className="flex h-56 items-center justify-center overflow-hidden rounded-md">
+                      <img className="h-44 object-contain drop-shadow-xl transition duration-500 group-hover:scale-[1.35] group-hover:-rotate-3" src={combo.image} alt={`Combo ${combo.name}`} />
+                    </div>
                 <h3 className="mt-5 min-h-14 text-xl font-bold text-slate-900">{combo.name}</h3>
                 <p className="mt-3 text-xl">
                   <span className="mr-2 text-red-500 line-through">{combo.oldPrice}</span>
@@ -1005,15 +1175,16 @@ function App() {
         <div className="mx-auto grid max-w-7xl gap-10 md:grid-cols-[1.1fr_0.7fr_1fr]">
           <div>
             <img className="h-20 w-auto object-contain" src={logoPulsepro} alt="Pulsepro" />
-            <div className="mt-6 grid gap-3">
-              <a className="flex items-center gap-3 hover:text-cyan-300" href="mailto:contato@pulsepro.com">
+              <div className="mt-6 grid gap-3">
+              <a className="flex items-center gap-3 hover:text-cyan-300" href="mailto:duartenumeroum@gmail.com">
                 <Mail className="size-5" aria-hidden="true" />
-                contato@pulsepro.com
+                duartenumeroum@gmail.com
               </a>
-              <a className="flex items-center gap-3 hover:text-cyan-300" href="https://wa.me/5561998386625">
+              <a className="flex items-center gap-3 hover:text-cyan-300" href="https://api.whatsapp.com/send/?phone=556198386625&text&type=phone_number&app_absent=0">
                 <WhatsAppIcon className="size-5" />
                 +55 (61) 99838-6625
               </a>
+                {/* pagamentos row moved below to central footer area to avoid duplication */}
             </div>
           </div>
           <nav className="grid gap-3 text-sm font-bold uppercase" aria-label="Links do rodape">
@@ -1021,31 +1192,27 @@ function App() {
               event.preventDefault()
               navigateToHomeSection()
             }}>Inicio</a>
-            <a className="hover:text-cyan-300" href="#produtos" onClick={(event) => {
+            <a className="hover:text-cyan-300" href="/produtos" onClick={(event) => {
               event.preventDefault()
-              navigateToHomeSection('produtos')
+              navigateToProductsPage()
             }}>Produtos</a>
-            <a className="hover:text-cyan-300" href="#combos" onClick={(event) => {
+            <a className="hover:text-cyan-300" href="/combos" onClick={(event) => {
               event.preventDefault()
-              navigateToHomeSection('combos')
+              navigateToCombosPage()
             }}>Combos</a>
-            <a className="hover:text-cyan-300" href="#sobre" onClick={(event) => {
+            <a className="hover:text-cyan-300" href="/sobre" onClick={(event) => {
               event.preventDefault()
-              navigateToHomeSection('sobre')
+              openStaticPage('sobre')
             }}>Sobre</a>
           </nav>
-          <div className="grid content-start gap-4">
-            <p className="font-black uppercase text-white">Compra protegida</p>
-            <div className="flex flex-wrap gap-3">
-              {['SSL', 'Visa', 'Master', 'Pix'].map((item) => (
-                <span key={item} className="rounded-md bg-white px-4 py-2 text-sm font-black text-slate-900">{item}</span>
-              ))}
-            </div>
+          <div className="flex flex-col items-end gap-3">
+            <img src={siteblindadoIcon} alt="Site blindado" className="h-20 object-contain" />
+            <img src={pagamentosIcon} alt="Formas de pagamento" className="h-14 object-contain" />
           </div>
         </div>
       </footer>
 
-      <a className="animate-whatsapp fixed bottom-5 right-5 z-50 grid size-14 place-items-center rounded-full bg-green-500 text-white shadow-2xl shadow-green-900/25 transition hover:-translate-y-1 hover:bg-green-600 focus:outline-none focus:ring-4 focus:ring-green-200" href="https://wa.me/5561998386625" aria-label="Chamar no WhatsApp">
+      <a className="animate-whatsapp fixed bottom-5 right-5 z-50 grid size-14 place-items-center rounded-full bg-green-500 text-white shadow-2xl shadow-green-900/25 transition hover:-translate-y-1 hover:bg-green-600 focus:outline-none focus:ring-4 focus:ring-green-200" href="https://api.whatsapp.com/send/?phone=556198386625&text&type=phone_number&app_absent=0" aria-label="Chamar no WhatsApp">
         <WhatsAppIcon className="size-8" />
       </a>
 
@@ -1139,7 +1306,7 @@ function App() {
                 <span>Calculado no checkout</span>
               </div>
             </div>
-            <button type="button" className="button-shine inline-flex w-full items-center justify-center gap-2 overflow-hidden rounded-full bg-blue-950 px-6 py-4 font-black uppercase text-white transition hover:bg-sky-800 focus:outline-none focus:ring-4 focus:ring-cyan-100" disabled={cartItems.length === 0}>
+            <button type="button" className="button-shine inline-flex w-full items-center justify-center gap-2 overflow-hidden rounded-full bg-blue-950 px-6 py-4 font-black uppercase text-white transition hover:bg-sky-800 focus:outline-none focus:ring-4 focus:ring-cyan-100" disabled={cartItems.length === 0} onClick={() => { try { sessionStorage.setItem('cart', JSON.stringify(cartItems)) } catch (e) {} window.location.hash = '#/checkout' }}>
               Finalizar compra
               <ChevronRight className="size-5" aria-hidden="true" />
             </button>
@@ -1237,6 +1404,143 @@ function App() {
                 </button>
               </div>
             </div>
+          </div>
+        </section>
+      </div>
+
+      {/* Checkout modal (mocked) */}
+      <div className={`${isCheckoutOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'} fixed inset-0 z-[85] grid place-items-center bg-slate-950/70 px-4 py-6 backdrop-blur-sm transition-opacity`} aria-hidden={!isCheckoutOpen}>
+        <button type="button" className="absolute inset-0 h-full w-full cursor-default" aria-label="Fechar checkout" onClick={() => setIsCheckoutOpen(false)} />
+        <section role="dialog" aria-modal="true" className={`${isCheckoutOpen ? 'translate-y-0 scale-100' : 'translate-y-4 scale-95'} relative max-h-[calc(100svh-2rem)] w-full max-w-4xl overflow-y-auto rounded-lg bg-white shadow-2xl transition duration-300`} aria-label="Checkout">
+          <div className="md:grid md:grid-cols-[1fr_380px] gap-6">
+            <div className="p-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-black text-blue-950">Finalizar compra</h2>
+                <button type="button" className="grid size-11 place-items-center rounded-full border border-slate-200 text-blue-950" onClick={() => setIsCheckoutOpen(false)} aria-label="Fechar checkout"><X className="size-5" /></button>
+              </div>
+
+              <form className="mt-6 grid gap-6" onSubmit={(e) => { e.preventDefault() }}>
+                <fieldset>
+                  <legend className="font-black text-slate-900">Endereço de entrega</legend>
+                  <div className="mt-3 grid gap-3">
+                    <label className="text-sm font-medium text-slate-700">Nome</label>
+                    <input aria-label="Nome do destinatário" autoFocus={isCheckoutOpen} className="w-full rounded-md border border-slate-200 px-3 py-3 text-sm bg-white shadow-sm focus:ring-2 focus:ring-cyan-100" placeholder="Nome completo" value={shippingAddress.name} onChange={(e) => setShippingAddress((s) => ({ ...s, name: e.target.value }))} />
+                    <label className="text-sm font-medium text-slate-700">Rua e número</label>
+                    <input aria-label="Rua e número" className="w-full rounded-md border border-slate-200 px-3 py-3 text-sm bg-white shadow-sm focus:ring-2 focus:ring-cyan-100" placeholder="Rua, número, complemento" value={shippingAddress.street} onChange={(e) => setShippingAddress((s) => ({ ...s, street: e.target.value }))} />
+                    <div className="grid grid-cols-2 gap-3">
+                      <input aria-label="Cidade" className="rounded-md border border-slate-200 px-3 py-3 text-sm bg-white shadow-sm focus:ring-2 focus:ring-cyan-100" placeholder="Cidade" value={shippingAddress.city} onChange={(e) => setShippingAddress((s) => ({ ...s, city: e.target.value }))} />
+                      <div className="flex gap-3">
+                        <input aria-label="Estado" className="rounded-md border border-slate-200 px-3 py-3 w-28 text-sm bg-white shadow-sm focus:ring-2 focus:ring-cyan-100" placeholder="UF" value={shippingAddress.state} onChange={(e) => setShippingAddress((s) => ({ ...s, state: e.target.value }))} />
+                        <input aria-label="CEP" className="rounded-md border border-slate-200 px-3 py-3 w-36 text-sm bg-white shadow-sm focus:ring-2 focus:ring-cyan-100" placeholder="CEP" value={shippingAddress.zip} onChange={(e) => setShippingAddress((s) => ({ ...s, zip: e.target.value }))} />
+                      </div>
+                    </div>
+                    <label className="text-sm font-medium text-slate-700">Telefone</label>
+                    <input aria-label="Telefone" className="w-full rounded-md border border-slate-200 px-3 py-3 text-sm bg-white shadow-sm focus:ring-2 focus:ring-cyan-100" placeholder="Telefone" value={shippingAddress.phone} onChange={(e) => setShippingAddress((s) => ({ ...s, phone: e.target.value }))} />
+                  </div>
+                </fieldset>
+
+                <fieldset>
+                  <legend className="font-black text-slate-900">Frete</legend>
+                  <div className="mt-3 flex flex-col sm:flex-row gap-3">
+                    <label className={`flex items-center gap-2 rounded-md border px-4 py-3 ${shippingMethod === 'standard' ? 'bg-sky-50 border-sky-200' : ''}`}>
+                      <input type="radio" name="shipping" checked={shippingMethod === 'standard'} onChange={() => setShippingMethod('standard')} aria-checked={shippingMethod === 'standard'} />
+                      <div>
+                        <div className="font-bold">Standard</div>
+                        <div className="text-sm text-slate-600">Entrega em 5-8 dias — R$15,00</div>
+                      </div>
+                    </label>
+                    <label className={`flex items-center gap-2 rounded-md border px-4 py-3 ${shippingMethod === 'express' ? 'bg-sky-50 border-sky-200' : ''}`}>
+                      <input type="radio" name="shipping" checked={shippingMethod === 'express'} onChange={() => setShippingMethod('express')} aria-checked={shippingMethod === 'express'} />
+                      <div>
+                        <div className="font-bold">Express</div>
+                        <div className="text-sm text-slate-600">Entrega em 1-2 dias — R$25,00</div>
+                      </div>
+                    </label>
+                  </div>
+                </fieldset>
+
+                <fieldset>
+                  <legend className="font-black text-slate-900">Pagamento</legend>
+                  <div className="mt-3 grid gap-3">
+                    <div className="flex gap-2">
+                      <button type="button" className={`flex-1 rounded-md border px-4 py-2 ${paymentMethod === 'card' ? 'bg-sky-700 text-white' : 'bg-white'}`} onClick={() => setPaymentMethod('card')} aria-pressed={paymentMethod === 'card'}>Cartão</button>
+                      <button type="button" className={`flex-1 rounded-md border px-4 py-2 ${paymentMethod === 'boleto' ? 'bg-sky-700 text-white' : 'bg-white'}`} onClick={() => setPaymentMethod('boleto')} aria-pressed={paymentMethod === 'boleto'}>Boleto</button>
+                      <button type="button" className={`flex-1 rounded-md border px-4 py-2 ${paymentMethod === 'pix' ? 'bg-sky-700 text-white' : 'bg-white'}`} onClick={() => setPaymentMethod('pix')} aria-pressed={paymentMethod === 'pix'}>Pix</button>
+                    </div>
+
+                    {paymentMethod === 'card' && (
+                      <div className="grid gap-2">
+                        <label className="sr-only">Número do cartão</label>
+                        <input aria-label="Número do cartão" className="rounded-md border px-3 py-2 focus:ring-2 focus:ring-cyan-200" placeholder="Número do cartão (mock)" />
+                        <div className="flex gap-2">
+                          <input aria-label="Validade" className="rounded-md border px-3 py-2 flex-1 focus:ring-2 focus:ring-cyan-200" placeholder="MM/AA" />
+                          <input aria-label="CVV" className="rounded-md border px-3 py-2 w-28 focus:ring-2 focus:ring-cyan-200" placeholder="CVV" />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </fieldset>
+
+                <div className="mt-4 grid gap-3">
+                  <button type="button" className="w-full md:w-auto rounded-full bg-blue-950 px-6 py-3 text-base font-black text-white hover:bg-sky-800 focus:outline-none focus:ring-4 focus:ring-cyan-200 shadow" onClick={() => {
+                    const shippingCost = shippingMethod === 'standard' ? 15 : 25
+                    const total = cartSubtotal + shippingCost
+                    const orderId = `PP-${Math.floor(Math.random() * 900000 + 100000)}`
+                    setOrderPlaced({ id: orderId, total })
+                    setCartItems([])
+                  }}>
+                    Pagar agora (mock)
+                  </button>
+                  <button type="button" className="w-full md:w-auto rounded-full border px-4 py-3 font-black" onClick={() => setIsCheckoutOpen(false)}>Voltar</button>
+                </div>
+              </form>
+            </div>
+
+            <aside className="bg-slate-50 p-6">
+              <h3 className="font-black text-slate-900">Resumo do pedido</h3>
+              <div className="mt-4 space-y-3">
+                {cartItems.length === 0 ? (
+                  <p className="text-sm text-slate-600">Seu carrinho está vazio.</p>
+                ) : (
+                  cartItems.map((it) => (
+                    <div key={it.name} className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <img src={it.image} alt="" className="h-12 w-12 object-contain rounded-md bg-white/50 p-1" />
+                        <div>
+                          <div className="text-sm font-bold">{it.name}</div>
+                          <div className="text-xs text-slate-600">x{it.quantity}</div>
+                        </div>
+                      </div>
+                      <div className="font-black">{formatCurrency(parsePrice(it.price) * it.quantity)}</div>
+                    </div>
+                  ))
+                )}
+
+                <div className="border-t pt-3">
+                  <div className="flex justify-between text-sm text-slate-600">
+                    <span>Subtotal</span>
+                    <strong>{formatCurrency(cartSubtotal)}</strong>
+                  </div>
+                  <div className="flex justify-between text-sm text-slate-600 mt-1">
+                    <span>Frete</span>
+                    <strong>{shippingMethod === 'standard' ? 'R$15,00' : 'R$25,00'}</strong>
+                  </div>
+                  <div className="flex justify-between text-lg font-black mt-3">
+                    <span>Total</span>
+                    <strong>{formatCurrency(cartSubtotal + (shippingMethod === 'standard' ? 15 : 25))}</strong>
+                  </div>
+                </div>
+              </div>
+
+              {orderPlaced && (
+                <div className="mt-6 rounded-lg border p-4 bg-green-50">
+                  <h4 className="font-black">Pedido confirmado</h4>
+                  <p className="mt-2">Número do pedido: <strong>{orderPlaced.id}</strong></p>
+                  <p className="mt-2">Total: <strong>{formatCurrency(orderPlaced.total)}</strong></p>
+                  <p className="mt-2 text-sm text-slate-600">Este é um pedido de teste (mock). Não há transação real.</p>
+                </div>
+              )}
+            </aside>
           </div>
         </section>
       </div>
