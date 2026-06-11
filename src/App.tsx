@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import logoPulsepro from './assets/Logo-PulsePro.webp'
 import bannerWellness from './assets/banners/Captura de Tela 2026-05-30 às 14.25.08.png'
 import bannerPerformance from './assets/banners/Captura de Tela 2026-05-30 às 14.25.22.png'
+import octogonoBackground from './assets/banners/octogono.png'
 import {
   categoryCarouselItems,
   combos,
@@ -22,6 +23,7 @@ import {
   Mail,
   Minus,
   Menu,
+  Phone,
   Plus,
   Search,
   ShieldCheck,
@@ -40,6 +42,14 @@ function WhatsAppIcon({ className = 'size-6' }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 32 32" fill="currentColor" aria-hidden="true">
       <path d="M16.04 3C8.92 3 3.14 8.74 3.14 15.8c0 2.26.6 4.46 1.74 6.4L3 29l6.98-1.82a13.03 13.03 0 0 0 6.06 1.52c7.12 0 12.9-5.74 12.9-12.8S23.16 3 16.04 3Zm0 23.54c-1.9 0-3.75-.5-5.38-1.46l-.39-.23-4.14 1.08 1.1-4.01-.26-.42a10.55 10.55 0 0 1-1.63-5.7c0-5.87 4.8-10.64 10.7-10.64 5.9 0 10.7 4.77 10.7 10.64 0 5.87-4.8 10.74-10.7 10.74Zm5.86-7.96c-.32-.16-1.9-.93-2.2-1.04-.3-.1-.52-.16-.74.16-.22.32-.85 1.04-1.04 1.25-.19.22-.38.24-.7.08-.32-.16-1.36-.5-2.6-1.6-.96-.85-1.6-1.9-1.8-2.22-.18-.32-.02-.5.14-.66.14-.14.32-.38.48-.56.16-.18.22-.32.32-.54.1-.22.05-.4-.03-.56-.08-.16-.74-1.78-1.02-2.44-.27-.64-.55-.55-.74-.56h-.63c-.22 0-.56.08-.86.4-.3.32-1.13 1.1-1.13 2.7s1.16 3.13 1.32 3.35c.16.22 2.28 3.46 5.54 4.86.77.33 1.38.53 1.85.68.78.25 1.48.21 2.04.13.62-.09 1.9-.77 2.17-1.52.27-.75.27-1.4.19-1.52-.08-.13-.3-.21-.62-.37Z" />
+    </svg>
+  )
+}
+
+function InstagramIcon({ className = 'size-6' }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5zm5 6.2A3.8 3.8 0 1 0 15.8 12 3.8 3.8 0 0 0 12 8.2zm4.6-.9a1.1 1.1 0 1 0 1.1 1.1 1.1 1.1 0 0 0-1.1-1.1zM12 9.6A2.4 2.4 0 1 1 9.6 12 2.4 2.4 0 0 1 12 9.6z" />
     </svg>
   )
 }
@@ -119,6 +129,7 @@ function App() {
   const [categoryStartIndex, setCategoryStartIndex] = useState(0)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [categoryPage, setCategoryPage] = useState<string | null>(null)
+  const [staticPage, setStaticPage] = useState<'sobre' | 'contato' | null>(null)
   const [activeCategory, setActiveCategory] = useState('Todos')
   const [bannerIndex, setBannerIndex] = useState(0)
   const [sortOrder, setSortOrder] = useState('padrao')
@@ -197,6 +208,7 @@ function App() {
   const navigateHome = () => {
     setSelectedProduct(null)
     setCategoryPage(null)
+    setStaticPage(null)
     setIsMenuOpen(false)
     window.history.pushState(null, '', '/')
     window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -205,6 +217,7 @@ function App() {
   const navigateToHomeSection = (sectionId?: string) => {
     setSelectedProduct(null)
     setCategoryPage(null)
+    setStaticPage(null)
     setIsMenuOpen(false)
     window.history.pushState(null, '', sectionId ? `/#${sectionId}` : '/')
 
@@ -221,6 +234,7 @@ function App() {
   const openProduct = (product: Product) => {
     setSelectedProduct(product)
     setCategoryPage(null)
+    setStaticPage(null)
     setIsImageZoomOpen(false)
     setIsMenuOpen(false)
     window.history.pushState(null, '', `/produto/${product.id}`)
@@ -235,8 +249,18 @@ function App() {
     setActiveCategory(category)
     setCategoryPage(category)
     setSelectedProduct(null)
+    setStaticPage(null)
     setIsMenuOpen(false)
     window.history.pushState(null, '', `/categoria/${categorySlugs[category] ?? 'todos'}`)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const openStaticPage = (page: 'sobre' | 'contato') => {
+    setSelectedProduct(null)
+    setCategoryPage(null)
+    setStaticPage(page)
+    setIsMenuOpen(false)
+    window.history.pushState(null, '', `/${page}`)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
@@ -264,6 +288,7 @@ function App() {
         const product = productCatalog.find((item) => item.id === routeSlug)
         setSelectedProduct(product ?? null)
         setCategoryPage(null)
+        setStaticPage(null)
         return
       }
 
@@ -272,11 +297,20 @@ function App() {
         setActiveCategory(category)
         setCategoryPage(category)
         setSelectedProduct(null)
+        setStaticPage(null)
+        return
+      }
+
+      if (routeType === 'sobre' || routeType === 'contato') {
+        setStaticPage(routeType)
+        setSelectedProduct(null)
+        setCategoryPage(null)
         return
       }
 
       setSelectedProduct(null)
       setCategoryPage(null)
+      setStaticPage(null)
     }
 
     syncRoute()
@@ -323,13 +357,17 @@ function App() {
           </label>
 
           <nav className="hidden items-center gap-7 text-sm font-bold uppercase text-slate-700 lg:flex" aria-label="Navegacao principal">
-            {navigationLinks.slice(0, 4).map((link) => (
+            {navigationLinks.slice(0, 5).map((link) => (
               <a
                 key={link.href}
                 className="first:text-sky-700 hover:text-cyan-500"
                 href={link.href}
                 onClick={(event) => {
                   event.preventDefault()
+                  if (link.href === '#sobre' || link.href === '#contato') {
+                    openStaticPage(link.href.replace('#', '') as 'sobre' | 'contato')
+                    return
+                  }
                   navigateToHomeSection(link.href === '#' ? undefined : link.href.replace('#', ''))
                 }}
               >
@@ -385,6 +423,10 @@ function App() {
               href={link.href}
               onClick={(event) => {
                 event.preventDefault()
+                if (link.href === '#sobre' || link.href === '#contato') {
+                  openStaticPage(link.href.replace('#', '') as 'sobre' | 'contato')
+                  return
+                }
                 navigateToHomeSection(link.href === '#' ? undefined : link.href.replace('#', ''))
               }}
             >
@@ -584,10 +626,89 @@ function App() {
             </div>
           </section>
         </main>
+      ) : staticPage === 'sobre' ? (
+        <main>
+          <section
+            className="relative overflow-hidden bg-slate-950 px-4 py-16 text-white sm:px-6 lg:px-8"
+            style={{ backgroundImage: `linear-gradient(90deg, rgba(8,8,8,.88), rgba(8,8,8,.72)), url(${octogonoBackground})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+          >
+            <div className="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-2">
+              <div className="relative grid justify-items-center">
+                <img className="h-28 w-auto object-contain sm:h-40" src={logoPulsepro} alt="Pulsepro" />
+                <div className="relative mt-8 flex items-end justify-center">
+                  {featuredProducts.slice(0, 3).map((product, index) => (
+                    <img
+                      key={product.id}
+                      className={`${index === 1 ? 'z-10 h-56 sm:h-72' : 'h-48 opacity-95 sm:h-60'} ${index === 0 ? '-mr-16' : index === 2 ? '-ml-16' : ''} object-contain drop-shadow-2xl`}
+                      src={product.image}
+                      alt={`Produto ${product.name}`}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <article className="rounded-2xl bg-black/20 p-6 backdrop-blur-sm sm:p-8">
+                <span className="block h-1 w-20 rounded-full bg-cyan-300" />
+                <h1 className="mt-6 text-3xl font-black leading-tight sm:text-4xl">Pulsepro – Ciência Natural para Viver Melhor</h1>
+                <div className="mt-6 grid gap-4 text-base leading-7 text-slate-100">
+                  <p>Somos uma empresa especializada na venda de suplementos para atletas de alta performance e para quem busca mais saúde e qualidade de vida.</p>
+                  <p>Nascemos em Brasília, uma cidade que respira movimento, com amplos espaços ao ar livre e forte cultura esportiva — cenário que influenciou diretamente a criação da nossa marca.</p>
+                  <p>Nossa história começa com a vivência do fundador no MMA, esporte que exige disciplina, força, resistência e cuidado constante com o corpo.</p>
+                  <p>Por isso, selecionamos suplementos de alta qualidade para apoiar profissionais e pessoas que treinam por saúde, bem-estar e superação diária.</p>
+                  <p className="font-black text-white">Pulsepro — impulsionando sua vida!</p>
+                </div>
+              </article>
+            </div>
+          </section>
+        </main>
+      ) : staticPage === 'contato' ? (
+        <main>
+          <section className="bg-white px-4 py-16 sm:px-6 lg:px-8">
+            <div className="mx-auto grid max-w-5xl items-center gap-10 lg:grid-cols-[1fr_0.9fr]">
+              <form className="rounded-2xl bg-slate-100 p-6 shadow-sm sm:p-8" onSubmit={(event) => event.preventDefault()}>
+                <span className="mx-auto block h-1 w-16 rounded-full bg-sky-600" />
+                <h1 className="mt-5 text-center text-3xl font-black text-slate-800">Fale conosco</h1>
+                <div className="mt-6 grid gap-4">
+                  <input className="rounded border border-slate-400 bg-white px-4 py-3 outline-none focus:border-cyan-400 focus:ring-4 focus:ring-cyan-100" type="text" placeholder="Nome" autoComplete="name" />
+                  <input className="rounded border border-slate-400 bg-white px-4 py-3 outline-none focus:border-cyan-400 focus:ring-4 focus:ring-cyan-100" type="email" placeholder="Email" autoComplete="email" />
+                  <textarea className="min-h-28 rounded border border-slate-400 bg-white px-4 py-3 outline-none focus:border-cyan-400 focus:ring-4 focus:ring-cyan-100" placeholder="Sua mensagem" />
+                  <button type="submit" className="w-fit rounded-full bg-slate-800 px-7 py-3 font-bold text-white transition hover:bg-blue-950 active:scale-95 focus:outline-none focus:ring-4 focus:ring-cyan-100">
+                    Enviar
+                  </button>
+                </div>
+              </form>
+
+              <aside>
+                <h2 className="text-3xl font-black text-slate-800">Contato</h2>
+                <div className="mt-5 grid gap-3 text-slate-700">
+                  <a className="flex items-center gap-3 hover:text-sky-700" href="tel:+5561998386625">
+                    <Phone className="size-5 text-sky-700" aria-hidden="true" />
+                    +55 (61) 99838-6625
+                  </a>
+                  <a className="flex items-center gap-3 hover:text-sky-700" href="mailto:duartenumeroum@gmail.com">
+                    <Mail className="size-5 text-sky-700" aria-hidden="true" />
+                    duartenumeroum@gmail.com
+                  </a>
+                </div>
+                <div className="mt-6 flex gap-3">
+                  <a className="grid size-11 place-items-center rounded-full bg-green-600 text-white transition hover:-translate-y-1" href="https://wa.me/5561998386625" aria-label="WhatsApp">
+                    <WhatsAppIcon className="size-6" />
+                  </a>
+                  <a className="grid size-11 place-items-center rounded-full bg-fuchsia-600 text-white transition hover:-translate-y-1" href="https://instagram.com" aria-label="Instagram">
+                    <InstagramIcon className="size-6" aria-hidden="true" />
+                  </a>
+                  <a className="grid size-11 place-items-center rounded-full bg-slate-900 text-white transition hover:-translate-y-1" href="https://tiktok.com" aria-label="TikTok">
+                    <span className="text-lg font-black">♪</span>
+                  </a>
+                </div>
+              </aside>
+            </div>
+          </section>
+        </main>
       ) : (
       <main>
-        <section className="relative overflow-hidden bg-slate-950" aria-label="Banners Pulsepro">
-          <img className="mobile-banner-kenburns aspect-[1440/599] min-h-[220px] w-full object-cover object-center sm:min-h-0" src={bannerSlides[bannerIndex]} alt="Banner promocional Pulsepro" />
+        <section className="relative bg-slate-950 lg:overflow-hidden" aria-label="Banners Pulsepro">
+          <img className="mobile-banner-kenburns w-full object-contain object-center lg:aspect-[1440/599]" src={bannerSlides[bannerIndex]} alt="Banner promocional Pulsepro" />
           <div className="absolute bottom-6 left-1/2 flex -translate-x-1/2 gap-2">
             {bannerSlides.map((_, index) => (
               <button
