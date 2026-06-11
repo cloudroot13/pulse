@@ -6,6 +6,7 @@ import bannerPerformance from './assets/banners/Captura de Tela 2026-05-30 às 1
 import bannerMobile from './assets/banners/banner_v2.jpeg'
 import octogonoBackground from './assets/banners/octogono.png'
 import belezaKitImg from './assets/produtos/beleza/Pulsepro_Prancheta-2.webp'
+import anvisaIcon from './assets/icons/anvisa.png'
 import pagamentosIcon from './assets/icons/pagamentos.webp'
 import siteblindadoIcon from './assets/icons/siteblindado.png'
 import {
@@ -41,6 +42,8 @@ import {
 import { generateSmartDescription, generateSmartShort } from './data/products'
 import Admin from './admin/Admin'
 import { recordVisit, recordProductView } from './utils/analytics'
+import { getCurrentCustomer, loginCustomer, logoutCustomer, registerCustomer } from './utils/customer'
+import type { Customer } from './utils/customer'
 
 type CartItem = Product & {
   quantity: number
@@ -128,6 +131,18 @@ function App() {
   const [isAccountOpen, setIsAccountOpen] = useState(false)
   const [isImageZoomOpen, setIsImageZoomOpen] = useState(false)
   const [accountMode, setAccountMode] = useState<'login' | 'register'>('login')
+  const [currentCustomer, setCurrentCustomer] = useState<Customer | null>(() => getCurrentCustomer())
+  const [accountMessage, setAccountMessage] = useState('')
+  const [accountForm, setAccountForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    password: '',
+    street: '',
+    city: '',
+    state: '',
+    zip: '',
+  })
   const [cartItems, setCartItems] = useState<CartItem[]>([])
   const [categoryStartIndex, setCategoryStartIndex] = useState(0)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
@@ -211,12 +226,57 @@ function App() {
   }
 
   const goToCheckout = () => {
+    if (!currentCustomer) {
+      setAccountMode('register')
+      setAccountMessage('Crie sua conta ou entre para finalizar a compra.')
+      setIsCartOpen(false)
+      setIsAccountOpen(true)
+      return
+    }
     try {
       sessionStorage.setItem('cart', JSON.stringify(cartItems))
     } catch {
       console.warn('Nao foi possivel salvar o carrinho no navegador.')
     }
+    setIsCartOpen(false)
+    setRouteHash('#/checkout')
     window.location.hash = '#/checkout'
+  }
+
+  const handleAccountSubmit = () => {
+    setAccountMessage('')
+    if (accountMode === 'login') {
+      const customer = loginCustomer(accountForm.email, accountForm.password)
+      if (!customer) {
+        setAccountMessage('Email ou senha invalidos.')
+        return
+      }
+      setCurrentCustomer(customer)
+      setIsAccountOpen(false)
+      return
+    }
+
+    if (!accountForm.name || !accountForm.email || !accountForm.password || !accountForm.street || !accountForm.city || !accountForm.state || !accountForm.zip || !accountForm.phone) {
+      setAccountMessage('Preencha todos os dados para criar a conta.')
+      return
+    }
+
+    const customer = registerCustomer({
+      name: accountForm.name,
+      email: accountForm.email,
+      phone: accountForm.phone,
+      password: accountForm.password,
+      address: {
+        name: accountForm.name,
+        street: accountForm.street,
+        city: accountForm.city,
+        state: accountForm.state.toUpperCase().slice(0, 2),
+        zip: accountForm.zip,
+        phone: accountForm.phone,
+      },
+    })
+    setCurrentCustomer(customer)
+    setIsAccountOpen(false)
   }
 
   const showNextCategory = () => {
@@ -228,6 +288,7 @@ function App() {
   }
 
   const navigateHome = () => {
+    setRouteHash('')
     setSelectedProduct(null)
     setCategoryPage(null)
     setStaticPage(null)
@@ -238,6 +299,7 @@ function App() {
   }
 
   const navigateToProductsPage = () => {
+    setRouteHash('')
     setSelectedProduct(null)
     setCategoryPage('Todos')
     setStaticPage(null)
@@ -249,6 +311,7 @@ function App() {
   }
 
   const navigateToCombosPage = () => {
+    setRouteHash('')
     setSelectedProduct(null)
     setCategoryPage(null)
     setStaticPage(null)
@@ -259,6 +322,7 @@ function App() {
   }
 
   const navigateToHomeSection = (sectionId?: string) => {
+    setRouteHash('')
     setSelectedProduct(null)
     setCategoryPage(null)
     setStaticPage(null)
@@ -282,6 +346,7 @@ function App() {
   }
 
   const openProduct = (product: Product) => {
+    setRouteHash('')
     setSelectedProduct(product)
     setCategoryPage(null)
     setStaticPage(null)
@@ -297,6 +362,7 @@ function App() {
   }
 
   const openCategory = (category: string) => {
+    setRouteHash('')
     setActiveCategory(category)
     setCategoryPage(category)
     setSelectedProduct(null)
@@ -307,6 +373,7 @@ function App() {
   }
 
   const openStaticPage = (page: 'sobre' | 'contato') => {
+    setRouteHash('')
     setSelectedProduct(null)
     setCategoryPage(null)
     setStaticPage(page)
@@ -424,7 +491,7 @@ function App() {
         Pular para produtos
       </a>
 
-      <div className="bg-gradient-to-r from-blue-950 via-sky-800 to-cyan-400 px-4 py-2 text-center text-xs font-semibold uppercase tracking-[0.18em] text-white sm:text-sm">
+      <div className="bg-linear-to-r from-blue-950 via-sky-800 to-cyan-400 px-4 py-2 text-center text-xs font-semibold uppercase tracking-[0.18em] text-white sm:text-sm">
         <span className="promo-sweep inline-block">Parcele em ate 12x no cartao</span>
       </div>
 
@@ -564,13 +631,13 @@ function App() {
                   Voltar para loja
                 </button>
 
-                <button type="button" className="mobile-tap-lift group relative grid min-h-[360px] cursor-zoom-in place-items-center overflow-hidden rounded-lg bg-white p-4 text-left focus:outline-none focus:ring-4 focus:ring-cyan-100 sm:min-h-[420px]" aria-label={`Ampliar imagem de ${selectedProduct.name}`} onClick={() => setIsImageZoomOpen(true)}>
+                <button type="button" className="mobile-tap-lift group relative grid min-h-90 cursor-zoom-in place-items-center overflow-hidden rounded-lg bg-white p-4 text-left focus:outline-none focus:ring-4 focus:ring-cyan-100 sm:min-h-105" aria-label={`Ampliar imagem de ${selectedProduct.name}`} onClick={() => setIsImageZoomOpen(true)}>
                   <Search className="absolute right-5 top-5 z-10 size-6 text-slate-950" aria-hidden="true" />
                   <span className="absolute bottom-5 left-1/2 z-20 -translate-x-1/2 rounded-full bg-slate-950/80 px-4 py-2 text-xs font-black uppercase tracking-[0.12em] text-white opacity-0 backdrop-blur transition duration-300 group-hover:opacity-100">
                     Clique para ampliar
                   </span>
                   <div className="absolute inset-6 rounded-full bg-cyan-100/60 opacity-0 blur-3xl transition duration-500 group-hover:opacity-100" />
-                  <img className="mobile-product-drift relative z-10 max-h-[440px] w-full object-contain drop-shadow-xl transition duration-700 group-hover:scale-150 sm:max-h-[520px]" src={selectedProduct.gallery?.[0] ?? selectedProduct.image} alt={`Embalagem ${selectedProduct.name}`} />
+                  <img className="mobile-product-drift relative z-10 max-h-110 w-full object-contain drop-shadow-xl transition duration-700 group-hover:scale-150 sm:max-h-130" src={selectedProduct.gallery?.[0] ?? selectedProduct.image} alt={`Embalagem ${selectedProduct.name}`} />
                 </button>
 
                 <button type="button" className="mobile-tap-lift group w-28 overflow-hidden rounded-md border border-slate-200 bg-white p-2 shadow-sm transition hover:border-cyan-300 focus:outline-none focus:ring-4 focus:ring-cyan-100" aria-label={`Abrir zoom de ${selectedProduct.name}`} onClick={() => setIsImageZoomOpen(true)}>
@@ -622,7 +689,7 @@ function App() {
                     <h2 className="text-xl font-black uppercase text-slate-950">Como usar</h2>
                     <p className="mt-3 leading-7 text-slate-700">{selectedProduct.usage}</p>
                   </div>
-                  <div className="rounded-lg bg-gradient-to-br from-blue-950 to-cyan-500 p-6 text-white">
+                  <div className="rounded-lg bg-linear-to-br from-blue-950 to-cyan-500 p-6 text-white">
                     <ShieldCheck className="size-9" aria-hidden="true" />
                     <h2 className="mt-4 text-xl font-black uppercase">Compra segura</h2>
                     <p className="mt-2 text-cyan-50">Checkout preparado para integrar pagamento, frete e cadastro do cliente.</p>
@@ -743,7 +810,7 @@ function App() {
                   <article key={product.id} className="mobile-card-motion mobile-tap-lift reveal-card group relative rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-cyan-200 hover:shadow-xl active:scale-[0.99]" style={{ animationDelay: `${index * 0.08}s` }}>
                     {product.oldPrice && <span className="animate-offer absolute left-5 top-5 z-10 rounded-full bg-red-600 px-4 py-2 text-sm font-black text-white">Oferta!</span>}
                     <button type="button" className="mobile-tap-lift w-full text-left" onClick={() => openProduct(product)}>
-                      <div className="flex h-56 items-center justify-center overflow-hidden rounded-md bg-gradient-to-b from-white to-cyan-50">
+                      <div className="flex h-56 items-center justify-center overflow-hidden rounded-md bg-linear-to-b from-white to-cyan-50">
                         <img className="h-44 object-contain transition duration-500 group-hover:scale-[1.35] group-hover:-rotate-2" src={product.image} alt={`Produto ${product.name}`} />
                       </div>
                       <p className="mt-5 text-sm font-bold uppercase text-sky-700">{product.tag}</p>
@@ -860,7 +927,7 @@ function App() {
       <main>
         <section className="relative bg-slate-950 lg:overflow-hidden" aria-label="Banners Pulsepro">
           {/* Desktop banner (carousel) */}
-          <img className="hidden lg:block w-full object-contain lg:aspect-[1440/599]" src={bannerSlides[bannerIndex]} alt="Banner promocional Pulsepro" />
+          <img className="hidden w-full object-contain lg:block lg:aspect-1440/599" src={bannerSlides[bannerIndex]} alt="Banner promocional Pulsepro" />
           {/* Mobile banner - use alternative image to improve visibility on small screens */}
           <div
             className="block lg:hidden w-full overflow-hidden"
@@ -928,13 +995,13 @@ function App() {
                   style={{ animationDelay: `${index * 0.08}s` }}
                   onClick={() => openCategory(category.label)}
                 >
-                  <span className="mobile-category-pulse relative grid size-28 place-items-center rounded-full bg-gradient-to-br from-blue-950 to-cyan-400 p-2 shadow-xl shadow-sky-900/15">
+                  <span className="mobile-category-pulse relative grid size-28 place-items-center rounded-full bg-linear-to-br from-blue-950 to-cyan-400 p-2 shadow-xl shadow-sky-900/15">
                     <img
                       className="h-full w-full rounded-full object-contain drop-shadow-lg transition duration-500 group-active:scale-110"
                       src={category.image}
                       alt={`Categoria ${category.label}`}
                     />
-                    <span className="absolute inset-0 rounded-full bg-gradient-to-t from-blue-950/10 to-transparent" />
+                    <span className="absolute inset-0 rounded-full bg-linear-to-t from-blue-950/10 to-transparent" />
                   </span>
                   <strong className="mt-3 grid min-h-10 max-w-32 place-items-center text-xs font-black uppercase leading-tight text-slate-900">
                     {category.label}
@@ -962,13 +1029,13 @@ function App() {
                     style={{ animationDelay: `${index * 0.08}s` }}
                     onClick={() => openCategory(category.label)}
                   >
-                    <span className="mobile-category-pulse relative grid size-36 place-items-center rounded-full bg-gradient-to-br from-blue-950 to-cyan-400 shadow-xl shadow-sky-900/15 transition duration-300 group-hover:-translate-y-1 group-hover:shadow-2xl group-active:scale-95 sm:size-44 lg:size-52">
+                    <span className="mobile-category-pulse relative grid size-36 place-items-center rounded-full bg-linear-to-br from-blue-950 to-cyan-400 shadow-xl shadow-sky-900/15 transition duration-300 group-hover:-translate-y-1 group-hover:shadow-2xl group-active:scale-95 sm:size-44 lg:size-52">
                       <img
                         className="h-full w-full rounded-full object-cover object-center transition duration-500 group-hover:scale-105"
                         src={category.image}
                         alt={`Categoria ${category.label}`}
                       />
-                      <span className="absolute inset-0 rounded-full bg-gradient-to-t from-blue-950/10 to-transparent" />
+                      <span className="absolute inset-0 rounded-full bg-linear-to-t from-blue-950/10 to-transparent" />
                     </span>
                     <strong className="mt-5 max-w-40 text-base font-black uppercase leading-tight text-slate-900 sm:text-lg">
                       {category.label}
@@ -1018,7 +1085,7 @@ function App() {
               {homeShowcaseProducts.map((product, index) => (
                 <article key={product.id} className="mobile-card-motion mobile-tap-lift group overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-xl" style={{ animationDelay: `${index * 0.06}s` }}>
                   <button type="button" className="w-full text-left" onClick={() => openProduct(product)}>
-                    <div className="grid h-36 place-items-center overflow-hidden rounded-xl bg-gradient-to-b from-white to-cyan-50">
+                    <div className="grid h-36 place-items-center overflow-hidden rounded-xl bg-linear-to-b from-white to-cyan-50">
                       <img className="h-28 object-contain drop-shadow-lg transition duration-500 group-hover:scale-125" src={product.image} alt={`Produto ${product.name}`} />
                     </div>
                     <h3 className="mt-4 min-h-10 text-sm font-black leading-tight text-slate-900">{product.name}</h3>
@@ -1059,7 +1126,7 @@ function App() {
 
           <div className="mt-10 grid gap-7 lg:grid-cols-3">
             {featuredProducts.map((product, index) => (
-              <article key={product.name} className="mobile-card-motion mobile-tap-lift shine-card animated-border group overflow-hidden rounded-lg bg-gradient-to-br from-blue-950 via-sky-900 to-sky-700 p-6 text-white shadow-2xl shadow-slate-900/15 transition duration-300 hover:-translate-y-2 active:scale-[0.99]" style={{ animationDelay: `${index * 0.12}s` }}>
+              <article key={product.name} className="mobile-card-motion mobile-tap-lift shine-card animated-border group overflow-hidden rounded-lg bg-linear-to-br from-blue-950 via-sky-900 to-sky-700 p-6 text-white shadow-2xl shadow-slate-900/15 transition duration-300 hover:-translate-y-2 active:scale-[0.99]" style={{ animationDelay: `${index * 0.12}s` }}>
                 <button type="button" className="mobile-tap-lift w-full text-left" onClick={() => openProduct(product)}>
                 <div className="relative flex h-52 items-center justify-center overflow-hidden rounded-md">
                   <div className="absolute h-36 w-36 rounded-full bg-cyan-300/25 blur-2xl transition group-hover:scale-125" />
@@ -1128,9 +1195,9 @@ function App() {
         </section>
 
         <section className="px-4 pb-16 sm:px-6 lg:px-8" id="sobre">
-          <div className="shine-card mx-auto grid max-w-6xl items-center gap-8 overflow-hidden rounded-lg bg-gradient-to-br from-blue-950 to-cyan-500 p-8 text-white shadow-2xl shadow-cyan-950/20 md:grid-cols-[0.7fr_1.3fr] md:p-12">
+          <div className="shine-card mx-auto grid max-w-6xl items-center gap-8 overflow-hidden rounded-lg bg-linear-to-br from-blue-950 to-cyan-500 p-8 text-white shadow-2xl shadow-cyan-950/20 md:grid-cols-[0.7fr_1.3fr] md:p-12">
             <div className="flex items-center justify-center">
-              <ShieldCheck className="animate-soft-pulse size-36" aria-hidden="true" />
+              <img className="animate-soft-pulse h-36 w-auto object-contain drop-shadow-2xl" src={anvisaIcon} alt="Anvisa" />
             </div>
             <div>
               <h2 className="text-3xl font-black uppercase sm:text-4xl">Qualidade e seguranca garantidas</h2>
@@ -1151,7 +1218,7 @@ function App() {
             <div className="testimonial-fade mt-10 overflow-hidden" aria-label="Carrossel de depoimentos de clientes">
               <div className="testimonial-track flex w-max gap-5 py-2">
                 {loopingTestimonials.map((testimonial, index) => (
-                  <article key={`${testimonial.name}-${index}`} className="w-[82vw] max-w-[390px] shrink-0 rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl sm:w-[390px]">
+                  <article key={`${testimonial.name}-${index}`} className="w-[82vw] max-w-97.5 shrink-0 rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl sm:w-97.5">
                     <div className="flex gap-1 text-amber-400" aria-label="5 estrelas">
                       {Array.from({ length: 5 }).map((_, starIndex) => (
                         <Star key={starIndex} className="size-5 fill-current" aria-hidden="true" />
@@ -1225,7 +1292,7 @@ function App() {
       </a>
 
       {selectedProduct && (
-        <div className={`${isImageZoomOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'} fixed inset-0 z-[80] grid place-items-center bg-slate-950/85 px-4 py-6 backdrop-blur-md transition-opacity`} aria-hidden={!isImageZoomOpen}>
+        <div className={`${isImageZoomOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'} fixed inset-0 z-80 grid place-items-center bg-slate-950/85 px-4 py-6 backdrop-blur-md transition-opacity`} aria-hidden={!isImageZoomOpen}>
           <button type="button" className="absolute inset-0 h-full w-full cursor-zoom-out" aria-label="Fechar imagem ampliada" onClick={() => setIsImageZoomOpen(false)} />
           <section className={`${isImageZoomOpen ? 'scale-100 mobile-zoom-pop' : 'scale-95'} relative grid max-h-[calc(100svh-2rem)] w-full max-w-6xl place-items-center rounded-lg bg-white p-4 shadow-2xl transition duration-300 sm:p-8`} aria-label={`Imagem ampliada de ${selectedProduct.name}`}>
             <button type="button" className="absolute right-4 top-4 z-10 grid size-11 place-items-center rounded-full bg-slate-950 text-white transition hover:bg-sky-800 focus:outline-none focus:ring-4 focus:ring-cyan-100" aria-label="Fechar zoom" onClick={() => setIsImageZoomOpen(false)}>
@@ -1237,7 +1304,7 @@ function App() {
         </div>
       )}
 
-      <div className={`${isCartOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'} fixed inset-0 z-[60] bg-slate-950/55 backdrop-blur-sm transition-opacity`} aria-hidden={!isCartOpen}>
+      <div className={`${isCartOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'} fixed inset-0 z-60 bg-slate-950/55 backdrop-blur-sm transition-opacity`} aria-hidden={!isCartOpen}>
         <button type="button" className="absolute inset-0 h-full w-full cursor-default" aria-label="Fechar carrinho" onClick={() => setIsCartOpen(false)} />
         <aside
           className={`${isCartOpen ? 'translate-x-0' : 'translate-x-full'} absolute right-0 top-0 flex h-full w-full max-w-md flex-col bg-white shadow-2xl transition-transform duration-300`}
@@ -1325,11 +1392,11 @@ function App() {
         </aside>
       </div>
 
-      <div className={`${isAccountOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'} fixed inset-0 z-[70] grid place-items-center bg-slate-950/60 px-4 py-6 backdrop-blur-sm transition-opacity`} aria-hidden={!isAccountOpen}>
+      <div className={`${isAccountOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'} fixed inset-0 z-70 grid place-items-center bg-slate-950/60 px-4 py-6 backdrop-blur-sm transition-opacity`} aria-hidden={!isAccountOpen}>
         <button type="button" className="absolute inset-0 h-full w-full cursor-default" aria-label="Fechar area da conta" onClick={() => setIsAccountOpen(false)} />
         <section className={`${isAccountOpen ? 'translate-y-0 scale-100' : 'translate-y-4 scale-95'} relative max-h-[calc(100svh-2rem)] w-full max-w-5xl overflow-y-auto rounded-lg bg-white shadow-2xl transition duration-300`} aria-label="Area da conta">
           <div className="grid lg:grid-cols-[0.9fr_1.1fr]">
-            <div className="hidden bg-gradient-to-br from-blue-950 via-sky-800 to-cyan-400 p-8 text-white lg:grid lg:content-between">
+            <div className="hidden bg-linear-to-br from-blue-950 via-sky-800 to-cyan-400 p-8 text-white lg:grid lg:content-between">
               <div>
                 <p className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-2 text-sm font-bold backdrop-blur">
                   <Lock className="size-4" aria-hidden="true" />
@@ -1365,37 +1432,53 @@ function App() {
                 </button>
               </div>
 
-              <form className="mt-7 grid gap-4" onSubmit={(event) => event.preventDefault()}>
+              {currentCustomer && (
+                <div className="mt-6 rounded-lg bg-emerald-50 p-4 text-sm text-emerald-800">
+                  <strong className="block">Logado como {currentCustomer.name}</strong>
+                  <span>{currentCustomer.email}</span>
+                  <button type="button" className="mt-3 block font-black uppercase text-emerald-900" onClick={() => { logoutCustomer(); setCurrentCustomer(null); setAccountMessage('Voce saiu da conta.') }}>
+                    Sair da conta
+                  </button>
+                </div>
+              )}
+
+              <form className="mt-7 grid gap-4" onSubmit={(event) => { event.preventDefault(); handleAccountSubmit() }}>
                 {accountMode === 'register' && (
                   <div className="grid gap-2">
                     <label className="text-sm font-black uppercase text-slate-700" htmlFor="name">Nome completo</label>
-                    <input id="name" className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-cyan-400 focus:bg-white focus:ring-4 focus:ring-cyan-100" type="text" placeholder="Seu nome" autoComplete="name" />
+                    <input id="name" className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-cyan-400 focus:bg-white focus:ring-4 focus:ring-cyan-100" type="text" placeholder="Seu nome" autoComplete="name" value={accountForm.name} onChange={(event) => setAccountForm((form) => ({ ...form, name: event.target.value }))} />
                   </div>
                 )}
 
                 <div className="grid gap-2">
                   <label className="text-sm font-black uppercase text-slate-700" htmlFor="email">E-mail</label>
-                  <input id="email" className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-cyan-400 focus:bg-white focus:ring-4 focus:ring-cyan-100" type="email" placeholder="voce@email.com" autoComplete="email" />
+                  <input id="email" className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-cyan-400 focus:bg-white focus:ring-4 focus:ring-cyan-100" type="email" placeholder="voce@email.com" autoComplete="email" value={accountForm.email} onChange={(event) => setAccountForm((form) => ({ ...form, email: event.target.value }))} />
                 </div>
 
                 {accountMode === 'register' && (
                   <div className="grid gap-2">
                     <label className="text-sm font-black uppercase text-slate-700" htmlFor="phone">Telefone</label>
-                    <input id="phone" className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-cyan-400 focus:bg-white focus:ring-4 focus:ring-cyan-100" type="tel" placeholder="(00) 00000-0000" autoComplete="tel" />
+                    <input id="phone" className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-cyan-400 focus:bg-white focus:ring-4 focus:ring-cyan-100" type="tel" placeholder="(00) 00000-0000" autoComplete="tel" value={accountForm.phone} onChange={(event) => setAccountForm((form) => ({ ...form, phone: event.target.value }))} />
                   </div>
                 )}
 
                 <div className="grid gap-2">
                   <label className="text-sm font-black uppercase text-slate-700" htmlFor="password">Senha</label>
-                  <input id="password" className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-cyan-400 focus:bg-white focus:ring-4 focus:ring-cyan-100" type="password" placeholder="Digite sua senha" autoComplete={accountMode === 'login' ? 'current-password' : 'new-password'} />
+                  <input id="password" className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-cyan-400 focus:bg-white focus:ring-4 focus:ring-cyan-100" type="password" placeholder="Digite sua senha" autoComplete={accountMode === 'login' ? 'current-password' : 'new-password'} value={accountForm.password} onChange={(event) => setAccountForm((form) => ({ ...form, password: event.target.value }))} />
                 </div>
 
                 {accountMode === 'register' && (
-                  <label className="flex items-start gap-3 rounded-lg bg-cyan-50 p-4 text-sm text-slate-700">
-                    <input className="mt-1 size-4 accent-sky-700" type="checkbox" />
-                    Quero receber ofertas, novidades e cupons da Pulsepro por e-mail ou WhatsApp.
-                  </label>
+                  <div className="grid gap-3">
+                    <input className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-cyan-400 focus:bg-white focus:ring-4 focus:ring-cyan-100" placeholder="Rua, numero e complemento" autoComplete="street-address" value={accountForm.street} onChange={(event) => setAccountForm((form) => ({ ...form, street: event.target.value }))} />
+                    <div className="grid gap-3 sm:grid-cols-[1fr_90px_130px]">
+                      <input className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-cyan-400 focus:bg-white focus:ring-4 focus:ring-cyan-100" placeholder="Cidade" autoComplete="address-level2" value={accountForm.city} onChange={(event) => setAccountForm((form) => ({ ...form, city: event.target.value }))} />
+                      <input className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 uppercase outline-none transition focus:border-cyan-400 focus:bg-white focus:ring-4 focus:ring-cyan-100" placeholder="UF" autoComplete="address-level1" value={accountForm.state} onChange={(event) => setAccountForm((form) => ({ ...form, state: event.target.value.toUpperCase().slice(0, 2) }))} />
+                      <input className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-cyan-400 focus:bg-white focus:ring-4 focus:ring-cyan-100" placeholder="CEP" autoComplete="postal-code" value={accountForm.zip} onChange={(event) => setAccountForm((form) => ({ ...form, zip: event.target.value }))} />
+                    </div>
+                  </div>
                 )}
+
+                {accountMessage && <p className="rounded-lg bg-cyan-50 p-3 text-sm font-bold text-blue-950">{accountMessage}</p>}
 
                 <button type="submit" className="button-shine mt-2 inline-flex w-full items-center justify-center gap-2 overflow-hidden rounded-full bg-blue-950 px-6 py-4 font-black uppercase text-white transition hover:bg-sky-800 focus:outline-none focus:ring-4 focus:ring-cyan-100">
                   {accountMode === 'login' ? 'Entrar na conta' : 'Criar minha conta'}
@@ -1417,7 +1500,7 @@ function App() {
       </div>
 
       {/* Checkout modal (mocked) */}
-      <div className={`${isCheckoutOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'} fixed inset-0 z-[85] grid place-items-center bg-slate-950/70 px-4 py-6 backdrop-blur-sm transition-opacity`} aria-hidden={!isCheckoutOpen}>
+      <div className={`${isCheckoutOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'} fixed inset-0 z-85 grid place-items-center bg-slate-950/70 px-4 py-6 backdrop-blur-sm transition-opacity`} aria-hidden={!isCheckoutOpen}>
         <button type="button" className="absolute inset-0 h-full w-full cursor-default" aria-label="Fechar checkout" onClick={() => setIsCheckoutOpen(false)} />
         <section role="dialog" aria-modal="true" className={`${isCheckoutOpen ? 'translate-y-0 scale-100' : 'translate-y-4 scale-95'} relative max-h-[calc(100svh-2rem)] w-full max-w-4xl overflow-y-auto rounded-lg bg-white shadow-2xl transition duration-300`} aria-label="Checkout">
           <div className="md:grid md:grid-cols-[1fr_380px] gap-6">

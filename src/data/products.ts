@@ -86,7 +86,7 @@ export const productCatalog: Product[] = [
   {
     id: 'pulse-flex',
     category: 'Rotina e bem-estar',
-    name: 'Pulse Flex',
+    name: 'Pulse Flex - dores articulares',
     price: 'R$89,90',
     tag: 'Bem-estar',
     subtitle: 'Suporte para mobilidade e conforto no dia a dia.',
