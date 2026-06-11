@@ -99,6 +99,7 @@ const testimonials = [
 const loopingTestimonials = [...testimonials, ...testimonials]
 const benefitTicker = ['Creatina', 'Pre-treino', 'Colageno', 'Melatonina', 'Beleza', 'Mobilidade', 'Foco', 'Energia']
 const bannerSlides = [bannerPerformance, bannerWellness]
+const mobileBannerSlides = [bannerMobile, bannerWellness]
 const categorySlugs: Record<string, string> = {
   Todos: 'todos',
   'Performance e energia': 'performance-e-energia',
@@ -136,7 +137,6 @@ function App() {
   const [activeCategory, setActiveCategory] = useState('Todos')
   const [bannerIndex, setBannerIndex] = useState(0)
   const [mobileBannerIndex, setMobileBannerIndex] = useState(0)
-  const mobileBannerSlides = [bannerMobile, bannerWellness]
   const touchStartX = useRef<number | null>(null)
 
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false)
@@ -210,6 +210,15 @@ function App() {
     )
   }
 
+  const goToCheckout = () => {
+    try {
+      sessionStorage.setItem('cart', JSON.stringify(cartItems))
+    } catch {
+      console.warn('Nao foi possivel salvar o carrinho no navegador.')
+    }
+    window.location.hash = '#/checkout'
+  }
+
   const showNextCategory = () => {
     setCategoryStartIndex((index) => (index + 1) % categoryCarouselItems.length)
   }
@@ -280,7 +289,7 @@ function App() {
     setIsMenuOpen(false)
     window.history.pushState(null, '', `/produto/${product.id}`)
     window.scrollTo({ top: 0, behavior: 'smooth' })
-    try { recordProductView(product.id) } catch (e) {}
+    recordProductView(product.id)
   }
 
   const closeProduct = () => {
@@ -389,8 +398,7 @@ function App() {
     }
 
     syncRoute()
-    // record visit for analytics on every route sync
-    try { recordVisit() } catch (e) {}
+    recordVisit()
     window.addEventListener('popstate', syncRoute)
 
     return () => window.removeEventListener('popstate', syncRoute)
@@ -1306,7 +1314,7 @@ function App() {
                 <span>Calculado no checkout</span>
               </div>
             </div>
-            <button type="button" className="button-shine inline-flex w-full items-center justify-center gap-2 overflow-hidden rounded-full bg-blue-950 px-6 py-4 font-black uppercase text-white transition hover:bg-sky-800 focus:outline-none focus:ring-4 focus:ring-cyan-100" disabled={cartItems.length === 0} onClick={() => { try { sessionStorage.setItem('cart', JSON.stringify(cartItems)) } catch (e) {} window.location.hash = '#/checkout' }}>
+            <button type="button" className="button-shine inline-flex w-full items-center justify-center gap-2 overflow-hidden rounded-full bg-blue-950 px-6 py-4 font-black uppercase text-white transition hover:bg-sky-800 focus:outline-none focus:ring-4 focus:ring-cyan-100" disabled={cartItems.length === 0} onClick={goToCheckout}>
               Finalizar compra
               <ChevronRight className="size-5" aria-hidden="true" />
             </button>

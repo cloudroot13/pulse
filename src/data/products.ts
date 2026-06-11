@@ -80,12 +80,12 @@ export const productCatalog: Product[] = [
     benefits: ['Mais força e desempenho físico', 'Prático e saboroso para rotina', 'Mais energia para a última série'],
     ingredients: ['Creatina monohidratada', 'Sabor uva verde', 'Gomas mastigaveis'],
     usage: 'Consuma conforme orientacao do rotulo ou indicacao profissional.',
-    ingredients: ['Coenzima Q10', 'Tirosina', 'Colina'],
-    usage: '4 cápsulas por dia (conforme recomendação do rótulo).',
-    gallery: [brainFuelKit3Img, brainFuelKit2Img, brainFuelImg],
-    image: brainFuelImg,
+    gallery: [creatinaGummyKit3Img, creatinaGummyKit2Img, creatinaGummyImg],
+    image: creatinaGummyImg,
+  },
+  {
     id: 'pulse-flex',
-    category: 'Dores articulares',
+    category: 'Rotina e bem-estar',
     name: 'Pulse Flex',
     price: 'R$89,90',
     tag: 'Bem-estar',
@@ -101,6 +101,7 @@ Um frasco contém 60 cápsulas. Sua recomendação diária é de 2 cápsulas por
     benefits: ['Reduz inflamações e desconfortos nas articulações', 'Alivia dores e promove maior flexibilidade', 'Auxilia na regeneração da cartilagem', 'Melhora a mobilidade e a qualidade de vida'],
     ingredients: ['Colageno tipo 2', 'Curcuma', 'Capsulas praticas'],
     usage: 'Um frasco contém 60 cápsulas. Recomendação diária: 2 cápsulas por dia.',
+    gallery: [pulseFlexKit3Img, pulseFlexKit2Img, pulseFlexImg],
     image: pulseFlexImg,
   },
   {
@@ -306,7 +307,6 @@ Benefícios:`,
     benefits: ['Auxilia no aumento da força e da potência muscular', 'Contribui para mais energia em treinos intensos', 'Melhora o desempenho físico e a capacidade de treino', 'Apoia a recuperação muscular pós-exercício', 'Forma prática e saborosa de suplementação'],
     ingredients: ['Creatina monohidratada', 'Sabor uva verde', 'Gomas mastigaveis'],
     usage: 'Recomendação de uso: 2 gomas ao dia. Conteúdo: 60 gomas mastigáveis. Sabor: Uva verde.',
-    usage: 'Consuma conforme orientacao do rotulo.',
     image: creatinaGummyKit3Img,
   },
   {
@@ -436,12 +436,13 @@ try {
         if (idx !== -1) {
           productCatalog[idx] = { ...productCatalog[idx], ...o }
         } else {
-          // add new product created from admin
-          productCatalog.push({ id, ...(o as any) })
+          const productOverride = { ...o }
+          delete productOverride.__deleted
+          productCatalog.push({ id, ...productOverride } as Product)
         }
       })
     }
   }
-} catch (e) {
-  // ignore
+} catch {
+  console.warn('Nao foi possivel aplicar edicoes locais dos produtos.')
 }

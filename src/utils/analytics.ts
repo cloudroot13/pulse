@@ -14,12 +14,18 @@ function load(): AnalyticsStore {
   try {
     const raw = localStorage.getItem(KEY)
     if (raw) return JSON.parse(raw)
-  } catch (e) {}
+  } catch {
+    return { daily: {}, totals: { visits: 0, orders: 0, revenue: 0 }, productViews: {}, lastOrders: [], adminLogins: 0 }
+  }
   return { daily: {}, totals: { visits: 0, orders: 0, revenue: 0 }, productViews: {}, lastOrders: [], adminLogins: 0 }
 }
 
 function save(store: AnalyticsStore) {
-  try { localStorage.setItem(KEY, JSON.stringify(store)) } catch (e) {}
+  try {
+    localStorage.setItem(KEY, JSON.stringify(store))
+  } catch {
+    console.warn('Nao foi possivel salvar as metricas no navegador.')
+  }
 }
 
 function todayKey() {

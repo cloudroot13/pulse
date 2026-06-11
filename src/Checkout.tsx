@@ -8,20 +8,22 @@ const parsePrice = (price: string) => Number(price.replace('R$', '').replace(/\.
 const formatCurrency = (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
 export default function CheckoutPage() {
-  const [cartItems, setCartItems] = useState<CartItem[]>([])
-  const [shippingMethod, setShippingMethod] = useState<'standard' | 'express'>('standard')
+  const [cartItems] = useState<CartItem[]>(() => {
+    try {
+      const raw = sessionStorage.getItem('cart')
+      return raw ? JSON.parse(raw) : []
+    } catch {
+      return []
+    }
+  })
+  const [shippingMethod] = useState<'standard' | 'express'>('standard')
   const [orderPlaced, setOrderPlaced] = useState<{ id: string; total: number } | null>(null)
 
   useEffect(() => {
-    try {
-      const raw = sessionStorage.getItem('cart')
-      if (raw) setCartItems(JSON.parse(raw))
-      else window.location.hash = '#/'
-    } catch (e) {
-      setCartItems([])
+    if (cartItems.length === 0) {
       window.location.hash = '#/'
     }
-  }, [])
+  }, [cartItems.length])
 
   const cartSubtotal = cartItems.reduce((total, item) => total + parsePrice(item.price) * item.quantity, 0)
   const [step, setStep] = useState<number>(1)
@@ -43,7 +45,7 @@ export default function CheckoutPage() {
     const refs = [null, contactRef, addressRef, billingRef, paymentRef]
     const targetRef = refs[step]
     if (targetRef && targetRef.current) {
-      try { targetRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' }) } catch (e) {}
+      targetRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }
   }, [step])
 
@@ -70,7 +72,11 @@ export default function CheckoutPage() {
                     <div className="flex items-center gap-3">
                       <button className="rounded-full bg-slate-800 px-6 py-3 font-black text-white" onClick={() => {
                         setStep(2)
-                        try { sessionStorage.setItem('checkoutEmail', email) } catch (e) {}
+                        try {
+                          sessionStorage.setItem('checkoutEmail', email)
+                        } catch {
+                          console.warn('Nao foi possivel salvar o email no navegador.')
+                        }
                       }}>Prosseguir à entrega</button>
                       <button className="rounded-full border px-6 py-3 font-black text-slate-700" onClick={() => window.location.hash = '#/'}>Voltar</button>
                     </div>
@@ -103,7 +109,11 @@ export default function CheckoutPage() {
                     <div className="flex items-center gap-3">
                       <button className="rounded-full bg-slate-800 px-6 py-3 font-black text-white" onClick={() => {
                         setStep(3)
-                        try { sessionStorage.setItem('checkoutAddress', JSON.stringify(address)) } catch (e) {}
+                        try {
+                          sessionStorage.setItem('checkoutAddress', JSON.stringify(address))
+                        } catch {
+                          console.warn('Nao foi possivel salvar o endereco no navegador.')
+                        }
                       }}>Prosseguir ao faturamento</button>
                       <button className="rounded-full border px-6 py-3 font-black text-slate-700" onClick={() => setStep(1)}>Voltar</button>
                     </div>
@@ -139,7 +149,11 @@ export default function CheckoutPage() {
                     <div className="flex items-center gap-3">
                       <button className="rounded-full bg-slate-800 px-6 py-3 font-black text-white" onClick={() => {
                         setStep(4)
-                        try { sessionStorage.setItem('checkoutBilling', JSON.stringify(billing)) } catch (e) {}
+                        try {
+                          sessionStorage.setItem('checkoutBilling', JSON.stringify(billing))
+                        } catch {
+                          console.warn('Nao foi possivel salvar o faturamento no navegador.')
+                        }
                       }}>Prosseguir ao pagamento</button>
                       <button className="rounded-full border px-6 py-3 font-black text-slate-700" onClick={() => setStep(2)}>Voltar</button>
                     </div>
@@ -226,8 +240,12 @@ export default function CheckoutPage() {
                         const createMockOrder = () => new Promise<{ id: string; total: number }>((res) => setTimeout(() => res({ id: `PP-${Math.floor(Math.random() * 900000 + 100000)}`, total }), 700))
                         const result = await createMockOrder()
                         setOrderPlaced(result)
-                        try { sessionStorage.removeItem('cart') } catch (e) {}
-                        try { recordOrder(result.id, result.total) } catch (e) {}
+                        try {
+                          sessionStorage.removeItem('cart')
+                        } catch {
+                          console.warn('Nao foi possivel limpar o carrinho no navegador.')
+                        }
+                        recordOrder(result.id, result.total)
                       } finally { setOrderLoading(false) }
                     }} disabled={!selectedPayment || !acceptedTerms || orderLoading}>
                       {orderLoading ? 'Processando...' : 'Finalizar pedido'}

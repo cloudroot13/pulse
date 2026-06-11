@@ -1,22 +1,24 @@
-import { useState, useEffect } from 'react'
+import { useMemo, useState } from 'react'
+import type { FormEvent } from 'react'
 import type { Product } from '../data/products'
 import { productCatalog as initialCatalog } from '../data/products'
 import { getAnalytics, getLastNDays, recordAdminLogin } from '../utils/analytics'
 
-const ADMIN_PATH = '/admin-3f2b9a'
 const ADMIN_USER = 'admin'
 const ADMIN_PASS = 'T3mp!P@ssw0rd'
 
-function loadOverrides(): Record<string, Partial<Product> & { __deleted?: boolean }> {
+type ProductOverrides = Record<string, Partial<Product> & { __deleted?: boolean }>
+
+function loadOverrides(): ProductOverrides {
   try {
     const raw = localStorage.getItem('admin_products')
     return raw ? JSON.parse(raw) : {}
-  } catch (e) {
+  } catch {
     return {}
   }
 }
 
-function saveOverrides(map: Record<string, Partial<Product>>) {
+function saveOverrides(map: ProductOverrides) {
   localStorage.setItem('admin_products', JSON.stringify(map))
 }
 
@@ -24,26 +26,23 @@ export default function Admin() {
   const [logged, setLogged] = useState<boolean>(sessionStorage.getItem('admin_logged') === '1')
   const [user, setUser] = useState('')
   const [pass, setPass] = useState('')
-  const [overrides, setOverrides] = useState<Record<string, Partial<Product> & { __deleted?: boolean }>>(loadOverrides())
-  const [products, setProducts] = useState<Product[]>([])
+  const [overrides, setOverrides] = useState<ProductOverrides>(loadOverrides())
   const [editing, setEditing] = useState<Product | null>(null)
 
-  useEffect(() => {
-    // build products view by merging overrides into initialCatalog
+  const products = useMemo(() => {
     const merged = initialCatalog.map((p) => ({ ...p, ...(overrides[p.id] || {}) }))
-    // include any override-only entries
     const extra = Object.keys(overrides)
       .filter((id) => !merged.find((m) => m.id === id))
-      .map((id) => ({ id, ...(overrides[id] as any) } as Product))
-    setProducts([...merged, ...extra])
+      .map((id) => ({ id, ...overrides[id] } as Product))
+    return [...merged, ...extra]
   }, [overrides])
 
-  function doLogin(e: any) {
-    e.preventDefault()
+  function doLogin(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
     if (user === ADMIN_USER && pass === ADMIN_PASS) {
       sessionStorage.setItem('admin_logged', '1')
       setLogged(true)
-      try { recordAdminLogin() } catch (e) {}
+      recordAdminLogin()
     } else {
       alert('Credenciais inválidas')
     }
@@ -148,7 +147,7 @@ export default function Admin() {
             <div className="grid gap-4">
               {products.map((p) => (
                 // hide deleted
-                (overrides[p.id] && (overrides[p.id] as any).__deleted) ? null : (
+                overrides[p.id]?.__deleted ? null : (
                 <div key={p.id} className="flex items-center justify-between gap-4 rounded-lg border p-4 shadow-sm hover:shadow-md transition">
                   <div className="flex items-center gap-4">
                     <img src={(p.gallery && p.gallery[0]) || p.image} alt="" className="h-16 w-16 rounded object-contain" />
