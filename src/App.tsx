@@ -4,6 +4,7 @@ import logoPulsepro from './assets/Logo-PulsePro.webp'
 import bannerWellness from './assets/banners/Captura de Tela 2026-05-30 às 14.25.08.png'
 import bannerPerformance from './assets/banners/Captura de Tela 2026-05-30 às 14.25.22.png'
 import bannerMobile from './assets/banners/banner_v2.jpeg'
+import bannerMobileV1 from './assets/banners/banner_v1.jpeg'
 import octogonoBackground from './assets/banners/octogono.png'
 import belezaKitImg from './assets/produtos/beleza/Pulsepro_Prancheta-2.webp'
 import anvisaIcon from './assets/icons/anvisa.png'
@@ -35,7 +36,6 @@ import {
   ShieldCheck,
   ShoppingCart,
   Sparkles,
-  Star,
   UserRound,
   X,
 } from 'lucide-react'
@@ -102,7 +102,8 @@ const testimonials = [
 const loopingTestimonials = [...testimonials, ...testimonials]
 const benefitTicker = ['Creatina', 'Pre-treino', 'Colageno', 'Melatonina', 'Beleza', 'Mobilidade', 'Foco', 'Energia']
 const bannerSlides = [bannerPerformance, bannerWellness]
-const mobileBannerSlides = [bannerMobile, bannerWellness]
+// Mobile uses the two vertical banners (v1 and v2)
+const mobileBannerSlides = [bannerMobileV1, bannerMobile]
 const categorySlugs: Record<string, string> = {
   Todos: 'todos',
   'Performance e energia': 'performance-e-energia',
@@ -1221,7 +1222,7 @@ function App() {
                   <article key={`${testimonial.name}-${index}`} className="w-[82vw] max-w-97.5 shrink-0 rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl sm:w-97.5">
                     <div className="flex gap-1 text-amber-400" aria-label="5 estrelas">
                       {Array.from({ length: 5 }).map((_, starIndex) => (
-                        <Star key={starIndex} className="size-5 fill-current" aria-hidden="true" />
+                        <Sparkles key={starIndex} className="size-5 fill-current" aria-hidden="true" />
                       ))}
                     </div>
                     <p className="mt-4 min-h-36 text-lg leading-8 text-slate-700">"{testimonial.text}"</p>
