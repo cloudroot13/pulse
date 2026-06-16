@@ -4,6 +4,7 @@ import dotenv from 'dotenv'
 import { openDb } from './db.js'
 import authRoutes from './routes/auth.js'
 import productsRoutes from './routes/products.js'
+import paymentsRoutes from './routes/payments.js'
 import bcrypt from 'bcryptjs'
 
 dotenv.config()
@@ -14,6 +15,7 @@ app.use(express.json())
 
 app.use('/api/auth', authRoutes)
 app.use('/api/products', productsRoutes)
+app.use('/api/payments', paymentsRoutes)
 
 const PORT = process.env.PORT || 4000
 

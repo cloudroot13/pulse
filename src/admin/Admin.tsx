@@ -76,6 +76,7 @@ export default function Admin() {
   const [coupons, setCoupons] = useState<Coupon[]>(loadCoupons())
   const [couponDraft, setCouponDraft] = useState<Coupon>(emptyCoupon)
   const [orders, setOrders] = useState<AdminOrder[]>(loadOrders())
+  const [dashboardNow, setDashboardNow] = useState(() => Date.now())
   const [period, setPeriod] = useState<'24h' | '7d' | '30d' | 'all'>('7d')
 
   const products = useMemo(() => {
@@ -87,9 +88,8 @@ export default function Admin() {
   }, [overrides])
 
   const analytics = getAnalytics()
-  const now = Date.now()
   const periodMs = period === '24h' ? 86_400_000 : period === '7d' ? 604_800_000 : period === '30d' ? 2_592_000_000 : Infinity
-  const periodOrders = orders.filter((order) => period === 'all' || now - new Date(order.date).getTime() <= periodMs)
+  const periodOrders = orders.filter((order) => period === 'all' || dashboardNow - new Date(order.date).getTime() <= periodMs)
   const revenue = periodOrders.reduce((total, order) => total + order.total, 0)
   const topProducts = Object.entries(analytics.productViews)
     .sort((first, second) => second[1] - first[1])
@@ -181,7 +181,7 @@ export default function Admin() {
             <p className="mt-2 text-cyan-50">Pronto para plugar API, banco de dados e gateway de pagamento.</p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <button className="rounded-full bg-white px-5 py-3 font-black uppercase text-blue-950" onClick={() => setOrders(loadOrders())}>Atualizar</button>
+            <button className="rounded-full bg-white px-5 py-3 font-black uppercase text-blue-950" onClick={() => { setOrders(loadOrders()); setDashboardNow(Date.now()) }}>Atualizar</button>
             <button className="rounded-full border border-white/30 px-5 py-3 font-black uppercase text-white" onClick={doLogout}>Sair</button>
           </div>
         </header>

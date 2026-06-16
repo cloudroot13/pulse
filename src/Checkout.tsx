@@ -24,6 +24,8 @@ type CheckoutOrder = {
   customer: { name: string; email: string; phone: string; address: Address; billing: Billing }
   items: CartItem[]
   status: 'confirmado'
+  providerId?: string
+  providerStatus?: string
   date: string
 }
 
@@ -45,6 +47,29 @@ const saveOrder = (order: CheckoutOrder) => {
   } catch {
     console.warn('Nao foi possivel salvar o pedido no painel.')
   }
+}
+
+const createPaymentOrder = async (order: CheckoutOrder) => {
+  const apiUrl = import.meta.env.VITE_API_URL
+  if (!apiUrl) return null
+
+  const response = await fetch(`${apiUrl}/api/payments/create-order`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      ...order,
+      paymentMethod: order.paymentMethod === 'card' ? 'credit_card' : order.paymentMethod,
+      items: order.items.map((item) => ({
+        id: item.name,
+        name: item.name,
+        quantity: item.quantity,
+        unitPrice: parsePrice(item.price),
+      })),
+    }),
+  })
+
+  if (!response.ok) throw new Error('Falha ao criar pedido no gateway.')
+  return response.json()
 }
 
 export default function CheckoutPage() {
@@ -138,6 +163,15 @@ export default function CheckoutPage() {
         items: cartItems,
         status: 'confirmado',
         date: new Date().toISOString(),
+      }
+      try {
+        const providerOrder = await createPaymentOrder(order)
+        if (providerOrder?.id) {
+          order.providerId = providerOrder.id
+          order.providerStatus = providerOrder.status
+        }
+      } catch {
+        console.warn('Gateway indisponivel. Pedido salvo localmente para acompanhamento.')
       }
       saveOrder(order)
       recordOrder(order.id, order.total)

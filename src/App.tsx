@@ -1,8 +1,8 @@
 import { useEffect, useState, useRef } from 'react'
 import CheckoutPage from './Checkout'
 import logoPulsepro from './assets/Logo-PulsePro.webp'
-import bannerWellness from './assets/banners/Captura de Tela 2026-05-30 às 14.25.08.png'
-import bannerPerformance from './assets/banners/Captura de Tela 2026-05-30 às 14.25.22.png'
+import bannerWellness from './assets/banners/banner1.png'
+import bannerPerformance from './assets/banners/banner2.png'
 import bannerMobile from './assets/banners/banner_v2.jpeg'
 import bannerMobileV1 from './assets/banners/banner_v1.jpeg'
 import octogonoBackground from './assets/banners/octogono.png'
@@ -893,9 +893,9 @@ function App() {
                     <Phone className="size-5 text-sky-700" aria-hidden="true" />
                     +55 (61) 99838-6625
                   </a>
-                  <a className="flex items-center gap-3 hover:text-sky-700" href="mailto:duartenumeroum@gmail.com">
+                  <a className="flex items-center gap-3 hover:text-sky-700" href="mailto:contatopulsepro@gmail.com">
                     <Mail className="size-5 text-sky-700" aria-hidden="true" />
-                    duartenumeroum@gmail.com
+                    contatopulsepro@gmail.com
                   </a>
                 </div>
                 <div className="mt-6">
@@ -928,7 +928,9 @@ function App() {
       <main>
         <section className="relative bg-slate-950 lg:overflow-hidden" aria-label="Banners Pulsepro">
           {/* Desktop banner (carousel) */}
-          <img className="hidden w-full object-contain lg:block lg:aspect-1440/599" src={bannerSlides[bannerIndex]} alt="Banner promocional Pulsepro" />
+          <button type="button" className="hidden w-full lg:block" onClick={navigateToProductsPage} aria-label="Ver produtos do banner">
+            <img className="w-full object-cover object-center lg:aspect-1440/599" src={bannerSlides[bannerIndex]} alt="Banner promocional Pulsepro" />
+          </button>
           {/* Mobile banner - use alternative image to improve visibility on small screens */}
           <div
             className="block lg:hidden w-full overflow-hidden"
@@ -943,7 +945,9 @@ function App() {
               touchStartX.current = null
             }}
           >
-            <img className="w-full object-contain mobile-banner-kenburns" src={mobileBannerSlides[mobileBannerIndex]} alt="Banner promocional Pulsepro mobile" />
+            <button type="button" className="w-full" onClick={navigateToProductsPage} aria-label="Ver produtos do banner mobile">
+              <img className="w-full object-contain mobile-banner-kenburns" src={mobileBannerSlides[mobileBannerIndex]} alt="Banner promocional Pulsepro mobile" />
+            </button>
             <div className="absolute bottom-6 left-1/2 flex -translate-x-1/2 gap-2 lg:hidden">
               {mobileBannerSlides.map((_, index) => (
                 <button
@@ -973,7 +977,7 @@ function App() {
           <div className="ticker-track flex w-max gap-4">
             {[...benefitTicker, ...benefitTicker, ...benefitTicker].map((item, index) => (
               <span key={`${item}-${index}`} className="inline-flex items-center gap-2 rounded-full border border-cyan-200 bg-cyan-50 px-5 py-3 text-sm font-black uppercase tracking-[0.12em] text-blue-950">
-                <Sparkles className="size-4 text-cyan-500" aria-hidden="true" />
+                <span className="size-2 rounded-full bg-cyan-500 shadow-[0_0_0_4px_rgba(103,232,249,0.25)]" aria-hidden="true" />
                 {item}
               </span>
             ))}
@@ -1252,9 +1256,9 @@ function App() {
           <div>
             <img className="h-20 w-auto object-contain" src={logoPulsepro} alt="Pulsepro" />
               <div className="mt-6 grid gap-3">
-              <a className="flex items-center gap-3 hover:text-cyan-300" href="mailto:duartenumeroum@gmail.com">
+              <a className="flex items-center gap-3 hover:text-cyan-300" href="mailto:contatopulsepro@gmail.com">
                 <Mail className="size-5" aria-hidden="true" />
-                duartenumeroum@gmail.com
+                contatopulsepro@gmail.com
               </a>
               <a className="flex items-center gap-3 hover:text-cyan-300" href="https://api.whatsapp.com/send/?phone=556198386625&text&type=phone_number&app_absent=0">
                 <WhatsAppIcon className="size-5" />

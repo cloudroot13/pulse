@@ -1,6 +1,6 @@
 # Pulsepro
 
-Landing page responsiva para uma loja de suplementos, criada com React, TypeScript, Vite e Tailwind CSS.
+Loja responsiva de suplementos feita com React, TypeScript, Vite e Tailwind CSS. O projeto já inclui vitrine, páginas de produto, carrinho, login/cadastro, checkout, cupons, dashboard administrativo e base de integração com Pagar.me.
 
 ## Rodar localmente
 
@@ -12,24 +12,83 @@ npm run dev
 ## Validar antes de publicar
 
 ```bash
-npm run lint
-npm run build
+npm run check
 ```
 
-## Publicar
+Esse comando roda lint e build de produção.
 
-Depois do build, envie a pasta `dist/` para o provedor de hospedagem.
+## Variáveis de ambiente
 
-Funciona bem em Vercel, Netlify, Hostinger com deploy estatico, Cloudflare Pages ou qualquer servidor que sirva arquivos HTML/CSS/JS.
+Crie um arquivo `.env` na raiz com:
 
-## Onde trocar conteudo
+```bash
+VITE_PAGARME_PUBLIC_KEY=pk_test_sua_chave_publica
+VITE_API_URL=http://localhost:4000
+```
 
-- Produtos em destaque: `featuredProducts` em `src/App.tsx`
-- Produtos da vitrine: `shelfProducts` em `src/App.tsx`
-- Combos: `combos` em `src/App.tsx`
-- Comentarios: `testimonials` em `src/App.tsx`
-- Imagem temporaria dos produtos: `src/assets/hero.png`
+Crie também `server/.env` com:
 
-## Observacoes
+```bash
+JWT_SECRET=troque_esse_segredo
+PORT=4000
+ADMIN_USER=admin
+ADMIN_PASS=sua_senha_forte
+PAGARME_SECRET_KEY=sk_test_sua_chave_secreta
+PAGARME_API_URL=https://api.pagar.me/core/v5
+```
 
-As fotos dos comentarios usam placeholders externos. Para producao final, substitua o campo `photo` por imagens reais hospedadas no projeto ou no CDN do cliente.
+Nunca coloque `PAGARME_SECRET_KEY` em arquivos dentro de `src/` ou em `.env.example`.
+
+## Servidor
+
+```bash
+cd server
+npm install
+npm run dev
+```
+
+Rotas principais:
+
+- `POST /api/auth/login`
+- `GET /api/products`
+- `POST /api/products`
+- `DELETE /api/products/:id`
+- `POST /api/payments/create-order`
+
+## Dashboard
+
+Acesse:
+
+```text
+/admin-3f2b9a
+```
+
+O dashboard gerencia:
+
+- visão geral de visitas, pedidos e receita;
+- pedidos com dados de envio;
+- cupons com validade, valor, status e uso único por cliente;
+- produtos com edição, remoção e upload/arraste de imagem.
+
+## Checkout
+
+O checkout exige login/cadastro antes de finalizar. Ele pede:
+
+- dados do cliente;
+- endereço completo;
+- CPF/faturamento;
+- método de frete;
+- cupom;
+- método de pagamento.
+
+Cartão não deve salvar número completo no navegador. Em produção, use a chave pública do Pagar.me para tokenizar o cartão no front e envie apenas o `card_token` para o servidor.
+
+## Publicação
+
+Na Vercel, configure:
+
+- build command: `npm run build`
+- output directory: `dist`
+- envs do front: `VITE_PAGARME_PUBLIC_KEY` e `VITE_API_URL`
+
+O backend Express precisa ser publicado separadamente ou convertido para funções serverless.
