@@ -73,7 +73,6 @@ export async function registerCustomer(input: Omit<Customer, 'id' | 'usedCoupons
   return customer
 }
 
-export function loginCustomer(email: string, password: string) {
 export async function loginCustomer(email: string, password: string) {
   const passwordHash = await hashPassword(password)
   const customer = loadCustomers().find((item) => item.email.toLowerCase() === email.trim().toLowerCase() && item.passwordHash === passwordHash)

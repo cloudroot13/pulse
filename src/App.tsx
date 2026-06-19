@@ -166,7 +166,8 @@ function App() {
   // category carousel ordering kept for future use
   // On the products page we want to show all products (no filtering).
   const filteredProducts = categoryPage
-    ? productCatalog
+    // when on the products page (`categoryPage` set), show only unit SKUs (exclude kits/combos)
+    ? productCatalog.filter((product) => !product.id.includes('-kit') && product.tag !== 'Combo')
     : productCatalog.filter((product) => {
         if (activeCategory === 'Todos') {
           return true
@@ -224,8 +225,10 @@ function App() {
     return 0
   })
 
-  // Order combos on home and combos page: kits with 2 units first, then kits with 3 units
-  const orderedCombos = [...combos].sort((a, b) => {
+  // Order combos on home and combos page: show only kit variants (2 and 3 units),
+  // with kits of 2 units first, then kits of 3 units.
+  const combosOnly = combos.filter((p) => p.id.includes('-kit-2') || p.id.includes('-kit-3'))
+  const orderedCombos = [...combosOnly].sort((a, b) => {
     const rank = (p: Product) => {
       const name = (p.name ?? '').toLowerCase()
       if (p.id.includes('-kit-2') || name.includes('kit com 2')) return 1
@@ -277,10 +280,10 @@ function App() {
     window.location.hash = '#/checkout'
   }
 
-  const handleAccountSubmit = () => {
+  const handleAccountSubmit = async () => {
     setAccountMessage('')
     if (accountMode === 'login') {
-      const customer = loginCustomer(accountForm.email, accountForm.password)
+      const customer = await loginCustomer(accountForm.email, accountForm.password)
       if (!customer) {
         setAccountMessage('Email ou senha invalidos.')
         return
@@ -295,7 +298,7 @@ function App() {
       return
     }
 
-    const customer = registerCustomer({
+    const customer = await registerCustomer({
       name: accountForm.name,
       email: accountForm.email,
       phone: accountForm.phone,
@@ -659,7 +662,7 @@ function App() {
                     Clique para ampliar
                   </span>
                   <div className="absolute inset-6 rounded-full bg-cyan-100/60 opacity-0 blur-3xl transition duration-500 group-hover:opacity-100" />
-                  <img className="mobile-product-drift relative z-10 max-h-110 w-full object-contain drop-shadow-xl transition duration-700 group-hover:scale-150 sm:max-h-130" src={selectedProduct.gallery?.[0] ?? selectedProduct.image} alt={`Embalagem ${selectedProduct.name}`} />
+                  <img className="mobile-product-drift relative z-10 max-h-110 w-full object-contain drop-shadow-xl transition duration-700 group-hover:scale-150 sm:max-h-130" src={selectedProduct.image} alt={`Embalagem ${selectedProduct.name}`} />
                 </button>
 
                 <button type="button" className="mobile-tap-lift group w-28 overflow-hidden rounded-md border border-slate-200 bg-white p-2 shadow-sm transition hover:border-cyan-300 focus:outline-none focus:ring-4 focus:ring-cyan-100" aria-label={`Abrir zoom de ${selectedProduct.name}`} onClick={() => setIsImageZoomOpen(true)}>
@@ -1072,7 +1075,10 @@ function App() {
         <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8" id="combos">
           <div className="text-center">
             <span className="mx-auto block h-1 w-20 rounded-full bg-sky-600" />
-            <h2 className="mt-6 text-3xl font-black text-slate-900 sm:text-4xl">Aproveite nossos combos e economize</h2>
+            <div className="flex items-center justify-center gap-4">
+              <h2 className="mt-6 text-3xl font-black text-slate-900 sm:text-4xl">Aproveite nossos combos e economize</h2>
+              <button type="button" className="ml-4 rounded-full bg-blue-950 px-4 py-2 text-sm font-black uppercase text-white hover:bg-sky-800" onClick={navigateToCombosPage}>Ver todos os combos</button>
+            </div>
           </div>
           <div className="mt-10 grid gap-5 md:grid-cols-3">
             {orderedCombos.map((combo, index) => (

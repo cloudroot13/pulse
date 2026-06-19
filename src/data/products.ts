@@ -9,8 +9,11 @@ import creatinaGummyKit2Img from '../assets/produtos/performance_energia/creatin
 import creatinaGummyKit3Img from '../assets/produtos/performance_energia/creatina-gummy/Creatina-Gummy-3.webp'
 import creatinaGummyImg from '../assets/produtos/performance_energia/creatina-gummy/Creatina-Gummy.webp'
 import creatinaPuraKit2Img from '../assets/produtos/performance_energia/creatina-pure/Creatina-2.webp'
+import creatinaPuraKit3Img from '../assets/produtos/performance_energia/creatina-pure/Creatina-3.webp'
 import creatinaPuraImg from '../assets/produtos/performance_energia/creatina-pure/Creatina.webp'
 import pulsePowerImg from '../assets/produtos/performance_energia/pulse-power/Pulse-Power.webp'
+import pulsePowerKit2Img from '../assets/produtos/performance_energia/pulse-power/Pulse-Power-2.webp'
+import pulsePowerKit3Img from '../assets/produtos/performance_energia/pulse-power/Pulse-Power-3.webp'
 import melatoninaKit2Img from '../assets/produtos/rotina_bem-estar/melatonina/Melatonina-2.webp'
 import melatoninaKit3Img from '../assets/produtos/rotina_bem-estar/melatonina/Melatonina-3.webp'
 import melatoninaImg from '../assets/produtos/rotina_bem-estar/melatonina/Melatonina.webp'
@@ -292,7 +295,7 @@ Um frasco contém 120 cápsulas. Sua recomendação diária é de 4 cápsulas po
     image: creatinaGummyKit2Img,
   },
   {
-    id: 'creatina-gummy-kit',
+    id: 'creatina-gummy-kit-3',
     name: 'Creatina Gummy (Kit com 3)',
     price: 'R$349,90',
     oldPrice: 'R$449,70',
@@ -308,6 +311,39 @@ Benefícios:`,
     ingredients: ['Creatina monohidratada', 'Sabor uva verde', 'Gomas mastigaveis'],
     usage: 'Recomendação de uso: 2 gomas ao dia. Conteúdo: 60 gomas mastigáveis. Sabor: Uva verde.',
     image: creatinaGummyKit3Img,
+  },
+
+  {
+    id: 'pulse-power-kit-2',
+    name: 'Pulse Power (Kit com 2)',
+    price: 'R$224,90',
+    oldPrice: 'R$249,80',
+    tag: 'Performance',
+    category: 'Performance e energia',
+    subtitle: 'Kit com 2 unidades de Pulse Power.',
+    description: 'Combo com 2 unidades do pré-treino Pulse Power.',
+    details: 'Economia para quem usa Pulse Power regularmente.',
+    benefits: ['Economia no kit', 'Mais energia por mais tempo'],
+    ingredients: ['Creatina', 'Beta Alanina', 'Taurina'],
+    usage: 'Use conforme orientacao de cada produto.',
+    gallery: [pulsePowerKit2Img, pulsePowerKit2Img],
+    image: pulsePowerKit2Img,
+  },
+  {
+    id: 'pulse-power-kit-3',
+    name: 'Pulse Power (Kit com 3)',
+    price: 'R$329,90',
+    oldPrice: 'R$379,70',
+    tag: 'Performance',
+    category: 'Performance e energia',
+    subtitle: 'Kit com 3 unidades de Pulse Power.',
+    description: 'Combo com 3 unidades do pré-treino Pulse Power.',
+    details: 'Melhor custo-beneficio para uso continuado.',
+    benefits: ['Maior economia', 'Energia prolongada para rotina de treinos'],
+    ingredients: ['Creatina', 'Beta Alanina', 'Taurina'],
+    usage: 'Use conforme orientacao de cada produto.',
+    gallery: [pulsePowerKit3Img, pulsePowerKit3Img, pulsePowerKit3Img],
+    image: pulsePowerKit3Img,
   },
   {
     id: 'creatina-pura',
@@ -342,7 +378,23 @@ Benefícios:`,
     image: creatinaPuraKit2Img,
   },
   {
-    id: 'pulse-flex-kit',
+    id: 'creatina-pura-kit-3',
+    name: 'Creatina Pura Monohidratada (Kit com 3)',
+    price: 'R$329,90',
+    oldPrice: 'R$374,70',
+    tag: 'Performance',
+    category: 'Performance e energia',
+    subtitle: 'Kit com 3 unidades de creatina pura.',
+    description: 'Combo de creatina pura com maior economia para uso continuado.',
+    details: 'Opcao para quem quer estocar creatina e economizar no combo.',
+    benefits: ['Maior economia', 'Uso continuado garantido', '100% creatina monohidratada'],
+    ingredients: ['Creatina monohidratada', 'Formato em po', 'Uso diario'],
+    usage: 'Misture em agua ou bebida de preferencia conforme recomendacao do rotulo.',
+    gallery: [creatinaPuraKit3Img, creatinaPuraKit3Img, creatinaPuraKit3Img],
+    image: creatinaPuraKit3Img,
+  },
+  {
+    id: 'pulse-flex-kit-2',
     name: 'Pulse Flex – Dores Articulares (Kit com 2)',
     price: 'R$149,90',
     oldPrice: 'R$179,80',
@@ -371,6 +423,7 @@ Benefícios:`,
     usage: 'Use diariamente conforme recomendacao do fabricante.',
     image: pulseFlexKit3Img,
   },
+  
 ]
 
 // Post-process kits: inherit main product fields when missing to keep descriptions consistent
@@ -388,6 +441,13 @@ productCatalog.forEach((prod) => {
   }
 })
 
+// Ensure unit SKUs use the single-item image (last gallery image) when available.
+productCatalog.forEach((prod) => {
+  if (!prod.id.includes('-kit') && prod.gallery && prod.gallery.length) {
+    prod.image = prod.gallery[prod.gallery.length - 1]
+  }
+})
+
 export const categoryCarouselItems = [
   { label: 'Todos', image: creatinaGummyKit3Img },
   { label: 'Performance e energia', image: creatinaGummyImg },
@@ -395,9 +455,15 @@ export const categoryCarouselItems = [
   { label: 'Beleza', image: belezaCategoriaImg },
 ]
 
-export const featuredProducts = productCatalog.slice(0, 3)
+// Make featured products explicit so we can control which SKUs appear as highlights.
+export const featuredProducts = [
+  'creatina-pura',
+  'creatina-gummy',
+  'pulse-power',
+].map((id) => productCatalog.find((p) => p.id === id)).filter((p): p is Product => Boolean(p))
 
-const homeShowcaseIds = ['brain-fuel', 'creatina-gummy', 'pulse-flex', 'melatonina', 'creatina-pura', 'cabelo-pele-unha']
+// Ensure home showcase contains the core single SKUs
+const homeShowcaseIds = ['brain-fuel', 'creatina-pura', 'pulse-flex', 'melatonina', 'creatina-gummy', 'cabelo-pele-unha']
 
 export const homeShowcaseProducts = homeShowcaseIds
   .map((id) => productCatalog.find((product) => product.id === id))
@@ -406,7 +472,7 @@ export const homeShowcaseProducts = homeShowcaseIds
 // Derive combos dynamically: any product that is a kit (id includes '-kit') or tagged as 'Combo'
 export const combos = productCatalog.filter((product) => product.id.includes('-kit') || product.tag === 'Combo')
 
-export const routineProductOrder = ['melatonina', 'melatonina-kit-2', 'melatonina-kit-3', 'pulse-flex', 'pulse-flex-kit', 'pulse-flex-kit-3']
+export const routineProductOrder = ['melatonina', 'melatonina-kit-2', 'melatonina-kit-3', 'pulse-flex', 'pulse-flex-kit-2', 'pulse-flex-kit-3']
 
 export const performanceProductOrder = [
   'brain-fuel',
@@ -414,7 +480,7 @@ export const performanceProductOrder = [
   'brain-fuel-kit-3',
   'creatina-gummy',
   'creatina-gummy-kit-2',
-  'creatina-gummy-kit',
+  'creatina-gummy-kit-3',
   'creatina-pura',
   'creatina-pura-kit-2',
   'pulse-power',
