@@ -15,6 +15,8 @@ dist-ssr
 .env.*
 !.env.example
 !server/.env.example
+# Ignore local server config containing secrets
+server/config.json
 
 # Editor directories and files
 .vscode/*

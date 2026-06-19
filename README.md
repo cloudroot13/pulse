@@ -17,27 +17,23 @@ npm run check
 
 Esse comando roda lint e build de produção.
 
-## Variáveis de ambiente
+## Configuração e segredos
 
-Crie um arquivo `.env` na raiz com:
+Este projeto evita salvar chaves secretas no repositório. Use variáveis de ambiente no seu ambiente local/servidor ou um secret manager no provedor de hospedagem.
 
-```bash
-VITE_PAGARME_PUBLIC_KEY=pk_test_sua_chave_publica
-VITE_API_URL=http://localhost:4000
-```
-
-Crie também `server/.env` com:
+- Local (temporário para a sessão):
 
 ```bash
-JWT_SECRET=troque_esse_segredo
-PORT=4000
-ADMIN_USER=admin
-ADMIN_PASS=sua_senha_forte
-PAGARME_SECRET_KEY=sk_test_sua_chave_secreta
-PAGARME_API_URL=https://api.pagar.me/core/v5
+export PAGARME_SECRET_KEY=sk_test_xxx
+export VITE_PAGARME_PUBLIC_KEY=pk_test_xxx
+export VITE_API_URL=http://localhost:4000
+export ALLOWED_ORIGINS=http://localhost:5174
+npm run dev
 ```
 
-Nunca coloque `PAGARME_SECRET_KEY` em arquivos dentro de `src/` ou em `.env.example`.
+- Modelo local (arquivo de exemplo): existe `server/config.sample.json` — copie para `server/config.json` apenas no seu ambiente local e não comite.
+
+Nunca comite `PAGARME_SECRET_KEY` ou quaisquer segredos no repositório. Use o painel do provedor (Vercel/Netlify/Heroku/AWS/GCP) para armazenar segredos em produção.
 
 ## Servidor
 
@@ -54,6 +50,12 @@ Rotas principais:
 - `POST /api/products`
 - `DELETE /api/products/:id`
 - `POST /api/payments/create-order`
+
+Notas sobre pagamentos (Pagar.me)
+
+- Para testar boleto: envie `customer.document` (CPF/CNPJ) no payload; o backend cria o pedido e retorna `charges[0].last_transaction` com `url`, `pdf`, `line` e `qrcode`.
+- Para cartão: implemente tokenização client-side usando a SDK do Pagar.me; envie apenas `cardToken` para o backend.
+- Em produção, use as chaves do painel (sandbox/test e live) via variáveis de ambiente.
 
 ## Dashboard
 

@@ -35,7 +35,6 @@ import {
   Search,
   ShieldCheck,
   ShoppingCart,
-  Sparkles,
   UserRound,
   X,
 } from 'lucide-react'
@@ -161,26 +160,29 @@ function App() {
   const [shippingAddress, setShippingAddress] = useState({ name: '', street: '', city: '', state: '', zip: '', phone: '' })
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'boleto' | 'pix'>('card')
   const [orderPlaced, setOrderPlaced] = useState<{ id: string; total: number } | null>(null)
-  const [sortOrder, setSortOrder] = useState('padrao')
+  const sortOrder = 'padrao'
 
   const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0)
   const cartSubtotal = cartItems.reduce((total, item) => total + parsePrice(item.price) * item.quantity, 0)
-  const orderedCategories = categoryCarouselItems.map((_, index) => categoryCarouselItems[(categoryStartIndex + index) % categoryCarouselItems.length])
-  const filteredProducts = productCatalog.filter((product) => {
-    if (activeCategory === 'Todos') {
-      return true
-    }
+  // category carousel ordering kept for future use
+  // On the products page we want to show all products (no filtering).
+  const filteredProducts = categoryPage
+    ? productCatalog
+    : productCatalog.filter((product) => {
+        if (activeCategory === 'Todos') {
+          return true
+        }
 
-    if (activeCategory === 'Performance e energia') {
-      return product.category === activeCategory || product.tag === 'Performance' || product.tag === 'Foco'
-    }
+        if (activeCategory === 'Performance e energia') {
+          return product.category === activeCategory || product.tag === 'Performance' || product.tag === 'Foco'
+        }
 
-    if (activeCategory === 'Rotina e bem-estar') {
-      return product.category === activeCategory || product.tag === 'Bem-estar' || product.tag === 'Sono'
-    }
+        if (activeCategory === 'Rotina e bem-estar') {
+          return product.category === activeCategory || product.tag === 'Bem-estar' || product.tag === 'Sono'
+        }
 
-    return product.category === activeCategory || product.tag === activeCategory
-  })
+        return product.category === activeCategory || product.tag === activeCategory
+      })
   const sortedProducts = [...filteredProducts].sort((firstProduct, secondProduct) => {
     if (sortOrder === 'padrao' && activeCategory === 'Rotina e bem-estar') {
       return getProductOrder(routineProductOrder, firstProduct.id) - getProductOrder(routineProductOrder, secondProduct.id)
@@ -203,6 +205,38 @@ function App() {
     }
 
     return 0
+  })
+
+  // Final ordering for product lists: single products first, then kits/combos with 2 units, then kits/combos with 3 units.
+  const orderedProducts = [...sortedProducts].sort((a, b) => {
+    const rank = (p: Product) => {
+      const name = (p.name ?? '').toLowerCase()
+      if (name.includes('kit com 2') || p.id.includes('-kit-2')) return 1
+      if (name.includes('kit com 3') || p.id.includes('-kit-3')) return 2
+      // some kits use '-kit' naming but include 'kit com 3' in the name (fallback)
+      if (p.id.includes('-kit') && name.includes('3')) return 2
+      if (p.id.includes('-kit')) return 1
+      return 0
+    }
+
+    const ra = rank(a)
+    const rb = rank(b)
+    if (ra !== rb) return ra - rb
+    return 0
+  })
+
+  // Order combos on home and combos page: kits with 2 units first, then kits with 3 units
+  const orderedCombos = [...combos].sort((a, b) => {
+    const rank = (p: Product) => {
+      const name = (p.name ?? '').toLowerCase()
+      if (p.id.includes('-kit-2') || name.includes('kit com 2')) return 1
+      if (p.id.includes('-kit-3') || name.includes('kit com 3')) return 2
+      // fallback: treat any '-kit' without explicit 2/3 as 1
+      if (p.id.includes('-kit')) return 1
+      return 0
+    }
+
+    return rank(a) - rank(b)
   })
 
   const addToCart = (product: Product) => {
@@ -280,13 +314,7 @@ function App() {
     setIsAccountOpen(false)
   }
 
-  const showNextCategory = () => {
-    setCategoryStartIndex((index) => (index + 1) % categoryCarouselItems.length)
-  }
-
-  const showPreviousCategory = () => {
-    setCategoryStartIndex((index) => (index - 1 + categoryCarouselItems.length) % categoryCarouselItems.length)
-  }
+  // Category controls removed (kept helpers in history)
 
   const navigateHome = () => {
     setRouteHash('')
@@ -735,7 +763,7 @@ function App() {
               <h2 className="mt-6 text-3xl font-black text-slate-900 sm:text-4xl">Aproveite nossos combos e economize</h2>
             </div>
             <div className="mt-10 grid gap-5 md:grid-cols-3">
-              {combos.map((combo, index) => (
+              {orderedCombos.map((combo, index) => (
                 <article key={combo.name} className="mobile-card-motion mobile-tap-lift reveal-card group relative rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-cyan-200 hover:shadow-xl active:scale-[0.99]" style={{ animationDelay: `${index * 0.1}s` }}>
                   <span className="animate-offer absolute left-6 top-6 rounded-full bg-red-600 px-4 py-2 text-sm font-black text-white">Oferta!</span>
                   <button type="button" className="mobile-tap-lift w-full text-left" onClick={() => openProduct(combo)}>
@@ -772,42 +800,14 @@ function App() {
                 Voltar para home
               </button>
 
-              <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                  <span className="block h-1 w-20 rounded-full bg-sky-600" />
-                  <h1 className="mt-6 text-4xl font-black text-slate-950 sm:text-5xl">
-                    {activeCategory === 'Todos' ? 'Todos os produtos' : activeCategory}
-                  </h1>
-                  <p className="mt-3 max-w-2xl text-lg text-slate-600">
-                    Escolha uma categoria e veja somente os produtos relacionados a ela.
-                  </p>
-                </div>
-                <label className="grid gap-2 text-sm font-bold text-slate-700 sm:min-w-80">
-                  <span className="sr-only">Ordenar produtos</span>
-                  <select className="rounded border border-slate-400 bg-white px-4 py-3 text-base text-slate-900 outline-none focus:border-cyan-400 focus:ring-4 focus:ring-cyan-100" value={sortOrder} onChange={(event) => setSortOrder(event.target.value)}>
-                    <option value="padrao">Ordenacao padrao</option>
-                    <option value="menor-preco">Menor preco</option>
-                    <option value="maior-preco">Maior preco</option>
-                    <option value="ofertas">Ofertas</option>
-                  </select>
-                </label>
-              </div>
-
-              <div className="mt-8 flex flex-wrap gap-2">
-                {categoryCarouselItems.map((category) => (
-                  <button
-                    key={category.label}
-                    type="button"
-                    className={`${activeCategory === category.label ? 'bg-blue-950 text-white' : 'bg-white text-slate-700'} rounded-full border border-slate-200 px-4 py-2 text-sm font-black uppercase transition hover:border-cyan-300 active:scale-95 focus:outline-none focus:ring-4 focus:ring-cyan-100`}
-                    onClick={() => openCategory(category.label)}
-                  >
-                    {category.label}
-                  </button>
-                ))}
+              <div>
+                <span className="block h-1 w-20 rounded-full bg-sky-600" />
+                <h1 className="mt-6 text-4xl font-black text-slate-950 sm:text-5xl">Todos os produtos</h1>
+                <p className="mt-3 max-w-2xl text-lg text-slate-600">Explore nosso catálogo completo de produtos.</p>
               </div>
 
               <div className="mt-9 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {sortedProducts.map((product, index) => (
+                {orderedProducts.map((product, index) => (
                   <article key={product.id} className="mobile-card-motion mobile-tap-lift reveal-card group relative rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-cyan-200 hover:shadow-xl active:scale-[0.99]" style={{ animationDelay: `${index * 0.08}s` }}>
                     {product.oldPrice && <span className="animate-offer absolute left-5 top-5 z-10 rounded-full bg-red-600 px-4 py-2 text-sm font-black text-white">Oferta!</span>}
                     <button type="button" className="mobile-tap-lift w-full text-left" onClick={() => openProduct(product)}>
@@ -895,7 +895,7 @@ function App() {
                   </a>
                   <a className="flex items-center gap-3 hover:text-sky-700" href="mailto:contatopulsepro@gmail.com">
                     <Mail className="size-5 text-sky-700" aria-hidden="true" />
-                    contatopulsepro@gmail.com
+                      contatopulsepro@gmail.com
                   </a>
                 </div>
                 <div className="mt-6">
@@ -927,9 +927,9 @@ function App() {
       ) : (
       <main>
         <section className="relative bg-slate-950 lg:overflow-hidden" aria-label="Banners Pulsepro">
-          {/* Desktop banner (carousel) */}
-          <button type="button" className="hidden w-full lg:block" onClick={navigateToProductsPage} aria-label="Ver produtos do banner">
-            <img className="w-full object-cover object-center lg:aspect-1440/599" src={bannerSlides[bannerIndex]} alt="Banner promocional Pulsepro" />
+          {/* Desktop banner (carousel) - clickable to go to produtos */}
+          <button type="button" className="hidden w-full lg:block" onClick={navigateToProductsPage} aria-label="Ver produtos">
+            <img className="w-full h-full object-cover lg:aspect-1440/599" src={bannerSlides[bannerIndex]} alt="Banner promocional Pulsepro" />
           </button>
           {/* Mobile banner - use alternative image to improve visibility on small screens */}
           <div
@@ -945,7 +945,7 @@ function App() {
               touchStartX.current = null
             }}
           >
-            <button type="button" className="w-full" onClick={navigateToProductsPage} aria-label="Ver produtos do banner mobile">
+            <button type="button" className="w-full" onClick={navigateToProductsPage} aria-label="Ver produtos">
               <img className="w-full object-contain mobile-banner-kenburns" src={mobileBannerSlides[mobileBannerIndex]} alt="Banner promocional Pulsepro mobile" />
             </button>
             <div className="absolute bottom-6 left-1/2 flex -translate-x-1/2 gap-2 lg:hidden">
@@ -974,104 +974,17 @@ function App() {
         </section>
 
         <section className="overflow-hidden border-y border-cyan-100 bg-white py-4" aria-label="Categorias em destaque">
-          <div className="ticker-track flex w-max gap-4">
+            <div className="ticker-track flex w-max gap-4">
             {[...benefitTicker, ...benefitTicker, ...benefitTicker].map((item, index) => (
               <span key={`${item}-${index}`} className="inline-flex items-center gap-2 rounded-full border border-cyan-200 bg-cyan-50 px-5 py-3 text-sm font-black uppercase tracking-[0.12em] text-blue-950">
-                <span className="size-2 rounded-full bg-cyan-500 shadow-[0_0_0_4px_rgba(103,232,249,0.25)]" aria-hidden="true" />
+                <span className="inline-block h-2 w-2 rounded-full bg-cyan-500" aria-hidden="true" />
                 {item}
               </span>
             ))}
           </div>
         </section>
 
-        <section className="bg-white px-4 py-14 sm:px-6 sm:py-16 lg:px-8" id="produtos" aria-label="Carrossel de categorias">
-          <div className="mx-auto max-w-7xl">
-            <div className="text-center">
-              <span className="mx-auto block h-1 w-20 rounded-full bg-sky-600" />
-              <h2 className="mt-6 text-3xl font-black text-slate-900 sm:text-4xl">Conheca nossos produtos</h2>
-            </div>
-
-            <div className="mt-9 grid grid-cols-2 gap-4 lg:hidden">
-              {categoryCarouselItems.map((category, index) => (
-                <button
-                  type="button"
-                  key={category.label}
-                  className="mobile-card-motion mobile-tap-lift group grid min-h-48 justify-items-center rounded-[1.6rem] border border-cyan-100 bg-white p-3 text-center shadow-xl shadow-sky-950/5 transition active:scale-[0.98]"
-                  style={{ animationDelay: `${index * 0.08}s` }}
-                  onClick={() => openCategory(category.label)}
-                >
-                  <span className="mobile-category-pulse relative grid size-28 place-items-center rounded-full bg-linear-to-br from-blue-950 to-cyan-400 p-2 shadow-xl shadow-sky-900/15">
-                    <img
-                      className="h-full w-full rounded-full object-contain drop-shadow-lg transition duration-500 group-active:scale-110"
-                      src={category.image}
-                      alt={`Categoria ${category.label}`}
-                    />
-                    <span className="absolute inset-0 rounded-full bg-linear-to-t from-blue-950/10 to-transparent" />
-                  </span>
-                  <strong className="mt-3 grid min-h-10 max-w-32 place-items-center text-xs font-black uppercase leading-tight text-slate-900">
-                    {category.label}
-                  </strong>
-                </button>
-              ))}
-            </div>
-
-            <div className="relative mt-10 hidden lg:block">
-              <button
-                type="button"
-                className="absolute left-0 top-1/2 z-10 grid size-12 -translate-y-1/2 place-items-center rounded-full bg-white text-slate-500 shadow-xl transition hover:text-sky-700 active:scale-95 focus:outline-none focus:ring-4 focus:ring-cyan-100"
-                aria-label="Categoria anterior"
-                onClick={showPreviousCategory}
-              >
-                <ChevronRight className="size-6 rotate-180" aria-hidden="true" />
-              </button>
-
-              <div className="category-carousel-grid mx-auto grid max-w-6xl grid-cols-4 gap-8">
-                {orderedCategories.map((category, index) => (
-                  <button
-                    type="button"
-                    key={`${category.label}-${categoryStartIndex}`}
-                    className="category-carousel-item mobile-tap-lift group grid justify-items-center text-center"
-                    style={{ animationDelay: `${index * 0.08}s` }}
-                    onClick={() => openCategory(category.label)}
-                  >
-                    <span className="mobile-category-pulse relative grid size-36 place-items-center rounded-full bg-linear-to-br from-blue-950 to-cyan-400 shadow-xl shadow-sky-900/15 transition duration-300 group-hover:-translate-y-1 group-hover:shadow-2xl group-active:scale-95 sm:size-44 lg:size-52">
-                      <img
-                        className="h-full w-full rounded-full object-cover object-center transition duration-500 group-hover:scale-105"
-                        src={category.image}
-                        alt={`Categoria ${category.label}`}
-                      />
-                      <span className="absolute inset-0 rounded-full bg-linear-to-t from-blue-950/10 to-transparent" />
-                    </span>
-                    <strong className="mt-5 max-w-40 text-base font-black uppercase leading-tight text-slate-900 sm:text-lg">
-                      {category.label}
-                    </strong>
-                  </button>
-                ))}
-              </div>
-
-              <button
-                type="button"
-                className="absolute right-0 top-1/2 z-10 grid size-12 -translate-y-1/2 place-items-center rounded-full bg-white text-slate-500 shadow-xl transition hover:text-sky-700 active:scale-95 focus:outline-none focus:ring-4 focus:ring-cyan-100"
-                aria-label="Proxima categoria"
-                onClick={showNextCategory}
-              >
-                <ChevronRight className="size-6" aria-hidden="true" />
-              </button>
-            </div>
-
-            <div className="mt-8 hidden justify-center gap-2 lg:flex" aria-label="Indicadores do carrossel de categorias">
-              {categoryCarouselItems.map((category, index) => (
-                <button
-                  key={category.label}
-                  type="button"
-                  className={`${categoryStartIndex === index ? 'w-7 bg-sky-700' : 'w-2 bg-slate-300'} h-2 rounded-full transition-all focus:outline-none focus:ring-4 focus:ring-cyan-100`}
-                  aria-label={`Mostrar ${category.label}`}
-                  onClick={() => setCategoryStartIndex(index)}
-                />
-              ))}
-            </div>
-          </div>
-        </section>
+        {/* Section 'Conheca nossos produtos' removed per request */}
 
         <section className="bg-slate-50 px-4 py-14 sm:px-6 lg:px-8" aria-label="Vitrine de produtos">
           <div className="mx-auto max-w-7xl">
@@ -1079,7 +992,6 @@ function App() {
               <div>
                 <span className="block h-1 w-20 rounded-full bg-sky-600" />
                 <h2 className="mt-5 text-3xl font-black text-slate-900 sm:text-4xl">Produtos em destaque</h2>
-                <p className="mt-2 max-w-2xl text-slate-600">Fotos reais dos produtos Pulsepro para o cliente reconhecer as embalagens antes de comprar.</p>
               </div>
               <button type="button" className="w-fit rounded-full bg-blue-950 px-5 py-3 text-sm font-black uppercase text-white transition hover:bg-sky-800 active:scale-95 focus:outline-none focus:ring-4 focus:ring-cyan-100" onClick={() => openCategory('Todos')}>
                 Ver todos
@@ -1125,8 +1037,7 @@ function App() {
         <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-3xl text-center">
             <span className="mx-auto block h-1 w-20 rounded-full bg-sky-600" />
-            <h2 className="mt-6 text-3xl font-black text-slate-900 sm:text-4xl">Destaques que vendem beneficio antes do preco</h2>
-            <p className="mt-4 text-lg text-slate-600">Cards grandes para apresentar os produtos principais com argumentos fortes e chamada direta.</p>
+            <h2 className="mt-6 text-3xl font-black text-slate-900 sm:text-4xl">Destaques</h2>
           </div>
 
           <div className="mt-10 grid gap-7 lg:grid-cols-3">
@@ -1171,7 +1082,7 @@ function App() {
             <h2 className="mt-6 text-3xl font-black text-slate-900 sm:text-4xl">Aproveite nossos combos e economize</h2>
           </div>
           <div className="mt-10 grid gap-5 md:grid-cols-3">
-            {combos.map((combo, index) => (
+            {orderedCombos.map((combo, index) => (
               <article key={combo.name} className="mobile-card-motion mobile-tap-lift reveal-card group relative rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-cyan-200 hover:shadow-xl active:scale-[0.99]" style={{ animationDelay: `${index * 0.1}s` }}>
                 <span className="animate-offer absolute left-6 top-6 rounded-full bg-red-600 px-4 py-2 text-sm font-black text-white">Oferta!</span>
                 <button type="button" className="mobile-tap-lift w-full text-left" onClick={() => openProduct(combo)}>
@@ -1224,9 +1135,9 @@ function App() {
               <div className="testimonial-track flex w-max gap-5 py-2">
                 {loopingTestimonials.map((testimonial, index) => (
                   <article key={`${testimonial.name}-${index}`} className="w-[82vw] max-w-97.5 shrink-0 rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl sm:w-97.5">
-                    <div className="flex gap-1 text-amber-400" aria-label="5 estrelas">
+                    <div className="flex gap-1" aria-label="5 estrelas">
                       {Array.from({ length: 5 }).map((_, starIndex) => (
-                        <Sparkles key={starIndex} className="size-5 fill-current" aria-hidden="true" />
+                        <span key={starIndex} className="inline-block h-3 w-3 rounded-full bg-amber-400" aria-hidden="true" />
                       ))}
                     </div>
                     <p className="mt-4 min-h-36 text-lg leading-8 text-slate-700">"{testimonial.text}"</p>

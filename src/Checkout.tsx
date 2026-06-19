@@ -59,6 +59,11 @@ const createPaymentOrder = async (order: CheckoutOrder) => {
     body: JSON.stringify({
       ...order,
       paymentMethod: order.paymentMethod === 'card' ? 'credit_card' : order.paymentMethod,
+      // Attach customer.document from billing CPF to support boleto creation
+      customer: {
+        ...order.customer,
+        document: order.customer?.billing?.cpf?.replace(/\D/g, '') || order.customer?.document,
+      },
       items: order.items.map((item) => ({
         id: item.name,
         name: item.name,

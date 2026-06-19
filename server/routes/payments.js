@@ -1,4 +1,5 @@
 import express from 'express'
+import config from '../config.js'
 
 const router = express.Router()
 
@@ -13,6 +14,10 @@ function buildPagarmePayload(order) {
     customer: {
       name: order.customer?.name,
       email: order.customer?.email,
+      // Map document if provided (CPF/CNPJ)
+      document: order.customer?.document || order.customer?.cpf || order.customer?.cpf_cnpj,
+      // Provide customer type when document is present (basic heuristic)
+      type: order.customer?.type || (order.customer?.document || order.customer?.cpf || order.customer?.cpf_cnpj ? (String(order.customer?.document || order.customer?.cpf || order.customer?.cpf_cnpj).replace(/\D/g, '').length <= 11 ? 'individual' : 'company') : undefined),
       phones: {
         mobile_phone: {
           country_code: '55',
@@ -41,13 +46,15 @@ function buildPagarmePayload(order) {
               },
             }
           : {}),
+        // Provide a boleto object (even empty) to satisfy basic API validation
+        ...(order.paymentMethod === 'boleto' ? { boleto: order.boleto || {} } : {}),
       },
     ],
   }
 }
 
 router.post('/create-order', async (req, res) => {
-  const secretKey = process.env.PAGARME_SECRET_KEY
+  const secretKey = process.env.PAGARME_SECRET_KEY || config.PAGARME_SECRET_KEY
   const order = req.body
 
   if (!secretKey || secretKey.includes('coloque_sua_chave')) {

@@ -1,0 +1,7 @@
+{
+  "PAGARME_SECRET_KEY": "coloque_sua_chave_de_teste_aqui",
+  "PAGARME_API_URL": "https://api.pagar.me/core/v5",
+  "PORT": 4000,
+  "ADMIN_USER": "admin",
+  "ADMIN_PASS": "sua_senha_admin_aqui"
+}
