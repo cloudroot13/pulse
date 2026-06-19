@@ -12,7 +12,7 @@ export type Customer = {
   name: string
   email: string
   phone: string
-  password: string
+  passwordHash: string
   address: CustomerAddress
   usedCoupons: string[]
   createdAt: string
@@ -42,20 +42,28 @@ export function loadCustomers() {
   return safeRead<Customer[]>(CUSTOMERS_KEY, [])
 }
 
+async function hashPassword(password: string) {
+  const data = new TextEncoder().encode(password)
+  const digest = await crypto.subtle.digest('SHA-256', data)
+  return Array.from(new Uint8Array(digest)).map((byte) => byte.toString(16).padStart(2, '0')).join('')
+}
+
 export function getCurrentCustomer() {
   const currentId = safeRead<string | null>(CURRENT_CUSTOMER_KEY, null)
   if (!currentId) return null
   return loadCustomers().find((customer) => customer.id === currentId) ?? null
 }
 
-export function registerCustomer(input: Omit<Customer, 'id' | 'usedCoupons' | 'createdAt'>) {
+export async function registerCustomer(input: Omit<Customer, 'id' | 'usedCoupons' | 'createdAt' | 'passwordHash'> & { password: string }) {
   const customers = loadCustomers()
   const normalizedEmail = input.email.trim().toLowerCase()
   const existing = customers.find((customer) => customer.email.toLowerCase() === normalizedEmail)
+  const { password, ...customerInput } = input
   const customer: Customer = {
     ...(existing ?? { id: crypto.randomUUID(), usedCoupons: [], createdAt: new Date().toISOString() }),
-    ...input,
+    ...customerInput,
     email: normalizedEmail,
+    passwordHash: await hashPassword(password),
   }
   const nextCustomers = existing
     ? customers.map((item) => (item.id === existing.id ? customer : item))
@@ -66,7 +74,9 @@ export function registerCustomer(input: Omit<Customer, 'id' | 'usedCoupons' | 'c
 }
 
 export function loginCustomer(email: string, password: string) {
-  const customer = loadCustomers().find((item) => item.email.toLowerCase() === email.trim().toLowerCase() && item.password === password)
+export async function loginCustomer(email: string, password: string) {
+  const passwordHash = await hashPassword(password)
+  const customer = loadCustomers().find((item) => item.email.toLowerCase() === email.trim().toLowerCase() && item.passwordHash === passwordHash)
   if (!customer) return null
   safeWrite(CURRENT_CUSTOMER_KEY, customer.id)
   return customer

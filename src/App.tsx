@@ -926,7 +926,7 @@ function App() {
           </button>
           {/* Mobile banner - use alternative image to improve visibility on small screens */}
           <div
-            className="block lg:hidden w-full overflow-hidden"
+            className="relative block h-[clamp(190px,58vw,360px)] w-full overflow-hidden bg-slate-950 lg:hidden"
             onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX }}
             onTouchEnd={(e) => {
               const endX = e.changedTouches?.[0]?.clientX ?? null
@@ -938,8 +938,8 @@ function App() {
               touchStartX.current = null
             }}
           >
-            <button type="button" className="w-full" onClick={navigateToProductsPage} aria-label="Ver produtos">
-              <img className="w-full object-contain mobile-banner-kenburns" src={mobileBannerSlides[mobileBannerIndex]} alt="Banner promocional Pulsepro mobile" />
+            <button type="button" className="h-full w-full" onClick={navigateToProductsPage} aria-label="Ver produtos">
+              <img className="h-full w-full object-cover object-center mobile-banner-kenburns" src={mobileBannerSlides[mobileBannerIndex]} alt="Banner promocional Pulsepro mobile" />
             </button>
             <div className="absolute bottom-6 left-1/2 flex -translate-x-1/2 gap-2 lg:hidden">
               {mobileBannerSlides.map((_, index) => (

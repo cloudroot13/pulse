@@ -5,6 +5,7 @@ import { recordOrder } from './utils/analytics'
 import { validateCoupon } from './data/coupons'
 import type { Coupon } from './data/coupons'
 import { getCurrentCustomer, markCouponAsUsed, updateCustomer } from './utils/customer'
+import { pagarmeConfig } from './config/pagarme'
 
 type CartItem = { name: string; price: string; quantity: number; image?: string }
 type PaymentMethod = 'card' | 'pix' | 'boleto'
@@ -50,7 +51,7 @@ const saveOrder = (order: CheckoutOrder) => {
 }
 
 const createPaymentOrder = async (order: CheckoutOrder) => {
-  const apiUrl = import.meta.env.VITE_API_URL
+  const apiUrl = pagarmeConfig.apiUrl
   if (!apiUrl) return null
 
   const response = await fetch(`${apiUrl}/api/payments/create-order`, {
