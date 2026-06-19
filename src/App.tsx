@@ -11,7 +11,6 @@ import anvisaIcon from './assets/icons/anvisa.png'
 import pagamentosIcon from './assets/icons/pagamentos.webp'
 import siteblindadoIcon from './assets/icons/siteblindado.png'
 import {
-  categoryCarouselItems,
   combos,
   featuredProducts,
   homeShowcaseProducts,

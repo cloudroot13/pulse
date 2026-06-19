@@ -62,7 +62,7 @@ const createPaymentOrder = async (order: CheckoutOrder) => {
       // Attach customer.document from billing CPF to support boleto creation
       customer: {
         ...order.customer,
-        document: order.customer?.billing?.cpf?.replace(/\D/g, '') || order.customer?.document,
+        document: order.customer?.billing?.cpf?.replace(/\D/g, ''),
       },
       items: order.items.map((item) => ({
         id: item.name,
