@@ -144,7 +144,7 @@ function App() {
     zip: '',
   })
   const [cartItems, setCartItems] = useState<CartItem[]>([])
-  const [categoryStartIndex, setCategoryStartIndex] = useState(0)
+  
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [categoryPage, setCategoryPage] = useState<string | null>(null)
   const [staticPage, setStaticPage] = useState<'sobre' | 'contato' | null>(null)
@@ -160,7 +160,7 @@ function App() {
   const [shippingAddress, setShippingAddress] = useState({ name: '', street: '', city: '', state: '', zip: '', phone: '' })
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'boleto' | 'pix'>('card')
   const [orderPlaced, setOrderPlaced] = useState<{ id: string; total: number } | null>(null)
-  const sortOrder = 'padrao'
+  const [sortOrder] = useState<'padrao' | 'menor-preco' | 'maior-preco' | 'ofertas'>('padrao')
 
   const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0)
   const cartSubtotal = cartItems.reduce((total, item) => total + parsePrice(item.price) * item.quantity, 0)
@@ -416,13 +416,7 @@ function App() {
     window.addEventListener('hashchange', onHash)
     return () => window.removeEventListener('hashchange', onHash)
   }, [])
-  useEffect(() => {
-    const intervalId = window.setInterval(() => {
-      setCategoryStartIndex((index) => (index + 1) % categoryCarouselItems.length)
-    }, 4200)
-
-    return () => window.clearInterval(intervalId)
-  }, [])
+  // Category carousel auto-advance removed (no UI using categoryStartIndex)
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
