@@ -929,7 +929,7 @@ function App() {
           </button>
           {/* Mobile banner - use alternative image to improve visibility on small screens */}
           <div
-            className="relative block h-[clamp(190px,58vw,360px)] w-full overflow-hidden bg-slate-950 lg:hidden"
+            className="relative block h-[clamp(810px,95vw,1440px)] w-full overflow-hidden bg-slate-950 lg:hidden"
             onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX }}
             onTouchEnd={(e) => {
               const endX = e.changedTouches?.[0]?.clientX ?? null
@@ -941,6 +941,9 @@ function App() {
               touchStartX.current = null
             }}
           >
+            <button type="button" className="absolute left-4 top-4 z-20 rounded-full bg-blue-950 px-4 py-2 text-sm font-black uppercase text-white hover:bg-sky-800 mobile-tap-lift lg:hidden" onClick={navigateToProductsPage} aria-label="Ver produtos">
+              Ver produto
+            </button>
             <button type="button" className="h-full w-full" onClick={navigateToProductsPage} aria-label="Ver produtos">
               <img className="h-full w-full object-cover object-center mobile-banner-kenburns" src={mobileBannerSlides[mobileBannerIndex]} alt="Banner promocional Pulsepro mobile" />
             </button>
@@ -1033,7 +1036,8 @@ function App() {
         <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-3xl text-center">
             <span className="mx-auto block h-1 w-20 rounded-full bg-sky-600" />
-            <h2 className="mt-6 text-3xl font-black text-slate-900 sm:text-4xl">Destaques</h2>
+            <h2 className="mt-6 text-3xl font-black text-slate-900 sm:text-4xl">mais vendidos
+            </h2>
           </div>
 
           <div className="mt-10 grid gap-7 lg:grid-cols-3">
