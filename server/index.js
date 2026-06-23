@@ -7,6 +7,7 @@ import { openDb } from './db.js'
 import authRoutes from './routes/auth.js'
 import productsRoutes from './routes/products.js'
 import paymentsRoutes from './routes/payments.js'
+import webhooksRoutes from './routes/webhooks.js'
 import bcrypt from 'bcryptjs'
 
 // Load configuration from server/config.json when present (alternative to .env files)
@@ -45,6 +46,9 @@ app.use(express.json({ limit: '100kb' }))
 app.use('/api/auth', authRoutes)
 app.use('/api/products', productsRoutes)
 app.use('/api/payments', paymentsRoutes)
+app.use('/api/webhooks', webhooksRoutes)
+// Note: temporary server-side tokenization removed. Client-side tokenization
+// should be performed using the Pagar.me public key (Vite env var VITE_PAGARME_PUBLIC_KEY).
 
 const PORT = process.env.PORT || 4000
 

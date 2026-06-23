@@ -6,7 +6,6 @@ import bannerPerformance from './assets/banners/banner2.png'
 import bannerMobile from './assets/banners/banner_v2.jpeg'
 import bannerMobileV1 from './assets/banners/banner_v1.jpeg'
 import octogonoBackground from './assets/banners/octogono.png'
-import belezaKitImg from './assets/produtos/beleza/Pulsepro_Prancheta-2.webp'
 import anvisaIcon from './assets/icons/anvisa.png'
 import pagamentosIcon from './assets/icons/pagamentos.webp'
 import siteblindadoIcon from './assets/icons/siteblindado.png'
@@ -846,9 +845,7 @@ function App() {
             <div className="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-2">
               <div className="relative grid justify-items-center">
                 <img className="h-28 w-auto object-contain sm:h-40" src={logoPulsepro} alt="Pulsepro" />
-                <div className="relative mt-8 flex items-end justify-center">
-                  <img className="h-72 object-contain drop-shadow-2xl" src={belezaKitImg} alt="Kit Pulsepro" />
-                </div>
+                <div className="mt-8" />
               </div>
 
               <article className="rounded-2xl bg-black/20 p-6 backdrop-blur-sm sm:p-8">

@@ -1,5 +1,5 @@
 {
-  "PAGARME_SECRET_KEY": "coloque_sua_chave_de_teste_aqui",
+  "PAGARME_SECRET_KEY": "coloque_sua_chave_de_producao_aqui (ex: sk_xxx) ",
   "PAGARME_API_URL": "https://api.pagar.me/core/v5",
   "PORT": 4000,
   "ADMIN_USER": "admin",

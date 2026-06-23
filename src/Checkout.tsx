@@ -74,7 +74,37 @@ const createPaymentOrder = async (order: CheckoutOrder) => {
     }),
   })
 
-  if (!response.ok) throw new Error('Falha ao criar pedido no gateway.')
+  // The server returns a standardized envelope: { success, approved, errors, data }
+  try {
+    return await response.json()
+  } catch {
+    return null
+  }
+}
+
+const createHostedCheckout = async (order: CheckoutOrder) => {
+  const apiUrl = pagarmeConfig.apiUrl
+  if (!apiUrl) return null
+
+  const body = {
+    ...order,
+    items: order.items.map((item) => ({ id: item.name, name: item.name, quantity: item.quantity, unitPrice: parsePrice(item.price) })),
+    customer: {
+      ...order.customer,
+      document: order.customer?.billing?.cpf?.replace(/\D/g, ''),
+    },
+  }
+
+  const response = await fetch(`${apiUrl}/api/payments/create-hosted-checkout`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}))
+    throw new Error(err.message || 'Falha ao criar sessão hospedada')
+  }
   return response.json()
 }
 
@@ -99,6 +129,10 @@ export default function CheckoutPage() {
   const [orderLoading, setOrderLoading] = useState(false)
   const [orderPlaced, setOrderPlaced] = useState<CheckoutOrder | null>(null)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [cardName, setCardName] = useState('')
+  const [cardNumber, setCardNumber] = useState('')
+  const [cardExpiry, setCardExpiry] = useState('')
+  const [cardCvv, setCardCvv] = useState('')
   const [couponCode, setCouponCode] = useState('')
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null)
   const [couponMessage, setCouponMessage] = useState('')
@@ -150,10 +184,74 @@ export default function CheckoutPage() {
     return Object.keys(nextErrors).length === 0
   }
 
+  // Pure, non-state validators used to gate form submission (do not call setState)
+  const isEmailValid = (value: string) => /^\S+@\S+\.\S+$/.test(value)
+  const isZipValid = (value: string) => value.replace(/\D/g, '').length >= 8
+  const isPhoneValid = (value: string) => value.replace(/\D/g, '').length >= 10
+  const isCpfValid = (value: string) => value.replace(/\D/g, '').length >= 11
+
+  function luhnCheck(cardNumber: string) {
+    const digits = cardNumber.replace(/\D/g, '')
+    let sum = 0
+    let shouldDouble = false
+    for (let i = digits.length - 1; i >= 0; i--) {
+      let d = Number(digits.charAt(i))
+      if (shouldDouble) {
+        d *= 2
+        if (d > 9) d -= 9
+      }
+      sum += d
+      shouldDouble = !shouldDouble
+    }
+    return digits.length >= 12 && sum % 10 === 0
+  }
+
+  const isCardValid = () => {
+    const num = cardNumber.replace(/\s+/g, '')
+    if (!num || !/^[0-9]{12,19}$/.test(num)) return false
+    if (!luhnCheck(num)) return false
+    const [m, y] = cardExpiry.split('/').map((s) => s && s.trim())
+    if (!m || !y) return false
+    const month = Number(m.padStart(2, '0'))
+    let year = Number(y)
+    if (y.length === 2) year = Number(`20${y}`)
+    const now = new Date()
+    if (!month || month < 1 || month > 12) return false
+    const exp = new Date(year, month - 1, 1)
+    if (isNaN(exp.getTime())) return false
+    if (exp < new Date(now.getFullYear(), now.getMonth(), 1)) return false
+    if (!/^[0-9]{3,4}$/.test(cardCvv)) return false
+    if (!cardName || cardName.trim().length < 2) return false
+    return true
+  }
+
+  const canFinalize = useMemo(() => {
+    if (!acceptedTerms || orderLoading || !hasItems || !customer) return false
+    if (!isEmailValid(email)) return false
+    if (!isPhoneValid(address.phone)) return false
+    if (!isZipValid(address.zip)) return false
+    if (!isCpfValid(billing.cpf)) return false
+    if (paymentMethod === 'card') return isCardValid()
+    // for pix/boleto basic checks passed above
+    return true
+  }, [acceptedTerms, orderLoading, hasItems, customer, email, address.phone, address.zip, billing.cpf, paymentMethod, cardNumber, cardExpiry, cardCvv, cardName])
+
   const completeOrder = async () => {
     if (!acceptedTerms || !hasItems || !customer) return
     setOrderLoading(true)
     try {
+      // final guard: run validators and show errors if any
+      const finalErrors: Record<string, string> = {}
+      if (!isEmailValid(email)) finalErrors.email = 'Email invalido.'
+      if (!isPhoneValid(address.phone)) finalErrors.phone = 'Telefone invalido.'
+      if (!isZipValid(address.zip)) finalErrors.zip = 'CEP invalido.'
+      if (!isCpfValid(billing.cpf)) finalErrors.cpf = 'CPF invalido.'
+      if (paymentMethod === 'card' && !isCardValid()) finalErrors.card = 'Dados do cartao invalidos.'
+      if (Object.keys(finalErrors).length) {
+        setErrors(finalErrors)
+        setOrderLoading(false)
+        return
+      }
       await new Promise((resolve) => window.setTimeout(resolve, 700))
       const order: CheckoutOrder = {
         id: `PP-${Math.floor(Math.random() * 900000 + 100000)}`,
@@ -171,10 +269,44 @@ export default function CheckoutPage() {
         date: new Date().toISOString(),
       }
       try {
+        // If payment method is card, prefer Hosted Checkout (faster for approvals)
+        if (order.paymentMethod === 'card') {
+          try {
+            const hosted = await createHostedCheckout(order)
+            if (hosted && (hosted.checkoutUrl || hosted.url || hosted.session?.url)) {
+              // Save order locally before redirect
+              saveOrder(order)
+              const redirectUrl = hosted.checkoutUrl || hosted.url || hosted.session.url
+              window.location.href = redirectUrl
+              return
+            }
+            // If hosted checkout failed to return a URL, throw to surface error
+            throw new Error('Hosted checkout did not return a URL')
+          } catch (hostErr) {
+            console.warn('Hosted checkout failed', hostErr)
+            throw hostErr
+          }
+        }
+
         const providerOrder = await createPaymentOrder(order)
-        if (providerOrder?.id) {
-          order.providerId = providerOrder.id
-          order.providerStatus = providerOrder.status
+        if (providerOrder) {
+          // providerOrder is an envelope: { success, approved, errors, data }
+          order.providerId = providerOrder.data?.id || providerOrder.data?.code || providerOrder.id
+          order.providerStatus = providerOrder.approved ? 'paid' : (providerOrder.data?.status || (providerOrder.success ? 'pending' : 'failed'))
+          if (providerOrder.errors && providerOrder.errors.length) (order as any).providerMessage = providerOrder.errors.join('; ')
+          // If Pix, try to extract PIX payload/QR from provider response and attach to the order
+          try {
+            const data = providerOrder.data || {}
+            const charge = (data.charges && data.charges[0]) || data.checkouts && data.checkouts[0] || data
+            const lastTx = charge?.last_transaction || {}
+            const pixObj = lastTx.pix || lastTx.qr_code || data.pix || charge?.pix || lastTx
+            if (pixObj && Object.keys(pixObj).length) {
+              // attach raw pix object for rendering after order placed
+              ;(order as any).providerPix = pixObj
+            }
+          } catch (e) {
+            // ignore
+          }
         }
       } catch {
         console.warn('Gateway indisponivel. Pedido salvo localmente para acompanhamento.')
@@ -220,8 +352,43 @@ export default function CheckoutPage() {
             )}
             <div className="mt-3 flex justify-between gap-4">
               <span className="text-slate-500">Pagamento</span>
-              <strong className="uppercase">{orderPlaced.paymentMethod}</strong>
+              <div className="text-right">
+                <strong className="uppercase">{orderPlaced.paymentMethod}</strong>
+                <div className="text-sm text-slate-500">{orderPlaced.providerStatus === 'paid' ? 'APROVADO' : (orderPlaced.providerStatus || 'Pendente')}</div>
+              </div>
             </div>
+            {(orderPlaced as any).providerMessage && (
+              <div className="mt-3 text-sm text-red-600">{(orderPlaced as any).providerMessage}</div>
+            )}
+            {(orderPlaced as any).providerPix && (
+              <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4">
+                <p className="font-black">Pix gerado</p>
+                <div className="mt-3 flex flex-col items-center gap-3">
+                  {(() => {
+                    const pix = (orderPlaced as any).providerPix || {}
+                    const payload = pix.payload || pix.qr_code || pix.qrcode || pix.code || JSON.stringify(pix)
+                    // If the provider returned an SVG QR, render inline
+                    if (typeof payload === 'string' && payload.trim().startsWith('<svg')) {
+                      return <div className="w-52" dangerouslySetInnerHTML={{ __html: payload }} />
+                    }
+                    // if base64 image provided
+                    if (pix.qr_code_base64) {
+                      return <img src={`data:image/png;base64,${pix.qr_code_base64}`} alt="Pix QR" className="w-48" />
+                    }
+                    // fallback: generate QR via Google Chart API from payload
+                    if (payload) {
+                      const src = `https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl=${encodeURIComponent(payload)}`
+                      return <img src={src} alt="Pix QR" className="w-48" />
+                    }
+                    return <textarea readOnly className="w-full rounded-md border p-2 text-sm" value={JSON.stringify(pix, null, 2)} />
+                  })()}
+                  <div className="flex gap-2">
+                    <button type="button" className="rounded-full bg-blue-950 px-4 py-2 text-white" onClick={async () => { const pix = (orderPlaced as any).providerPix || {}; const txt = pix.payload || pix.qr_code || JSON.stringify(pix); await navigator.clipboard.writeText(String(txt || '')); }}>Copiar código</button>
+                    <a className="rounded-full border px-4 py-2" href="#" onClick={(e) => { e.preventDefault(); window.open((orderPlaced as any).providerPix?.resource_url || (orderPlaced as any).providerPix?.url || '#', '_blank') }}>Abrir link</a>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
           <button type="button" className="mt-8 rounded-full bg-blue-950 px-7 py-4 font-black uppercase text-white transition hover:bg-sky-800" onClick={() => { window.location.hash = ''; window.location.href = '/' }}>
             Voltar para loja
@@ -373,11 +540,23 @@ export default function CheckoutPage() {
 
               {paymentMethod === 'card' && (
                 <div className="mt-5 grid gap-3 rounded-2xl bg-slate-50 p-4">
-                  <input className="rounded-2xl border border-slate-300 px-4 py-4 outline-none focus:border-cyan-400 focus:ring-4 focus:ring-cyan-100" placeholder="Nome impresso no cartão" autoComplete="cc-name" />
-                  <input className="rounded-2xl border border-slate-300 px-4 py-4 outline-none focus:border-cyan-400 focus:ring-4 focus:ring-cyan-100" placeholder="Número do cartão" inputMode="numeric" autoComplete="cc-number" />
+                  <label className="text-sm font-bold">
+                    Nome no cartão
+                    <input value={cardName} onChange={(e) => setCardName(e.target.value)} className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none focus:border-cyan-400 focus:ring-4 focus:ring-cyan-100" placeholder="Nome impresso no cartão" autoComplete="cc-name" />
+                  </label>
+                  <label className="text-sm font-bold">
+                    Número do cartão
+                    <input value={cardNumber} onChange={(e) => setCardNumber(e.target.value)} className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none focus:border-cyan-400 focus:ring-4 focus:ring-cyan-100" placeholder="4111 1111 1111 1111" inputMode="numeric" autoComplete="cc-number" />
+                  </label>
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <input className="rounded-2xl border border-slate-300 px-4 py-4 outline-none focus:border-cyan-400 focus:ring-4 focus:ring-cyan-100" placeholder="MM/AA" autoComplete="cc-exp" />
-                    <input className="rounded-2xl border border-slate-300 px-4 py-4 outline-none focus:border-cyan-400 focus:ring-4 focus:ring-cyan-100" placeholder="CVV" inputMode="numeric" autoComplete="cc-csc" />
+                    <label className="text-sm font-bold">
+                      Validade (MM/YY)
+                      <input value={cardExpiry} onChange={(e) => setCardExpiry(e.target.value)} className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none focus:border-cyan-400 focus:ring-4 focus:ring-cyan-100" placeholder="MM/AA" autoComplete="cc-exp" />
+                    </label>
+                    <label className="text-sm font-bold">
+                      CVV
+                      <input value={cardCvv} onChange={(e) => setCardCvv(e.target.value)} className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none focus:border-cyan-400 focus:ring-4 focus:ring-cyan-100" placeholder="CVV" inputMode="numeric" autoComplete="cc-csc" />
+                    </label>
                   </div>
                 </div>
               )}
@@ -406,7 +585,7 @@ export default function CheckoutPage() {
               </label>
 
               <div className="mt-5 flex flex-wrap gap-3">
-                <button type="button" className="rounded-full bg-blue-950 px-8 py-4 font-black uppercase text-white transition hover:bg-sky-800 disabled:cursor-not-allowed disabled:opacity-50" disabled={!acceptedTerms || orderLoading} onClick={completeOrder}>
+                <button type="button" className="rounded-full bg-blue-950 px-8 py-4 font-black uppercase text-white transition hover:bg-sky-800 disabled:cursor-not-allowed disabled:opacity-50" disabled={!canFinalize} onClick={completeOrder}>
                   {orderLoading ? 'Processando...' : 'Finalizar pedido'}
                 </button>
                 <button type="button" className="rounded-full border border-slate-300 px-7 py-4 font-black uppercase text-slate-700" onClick={() => setStep(3)}>
